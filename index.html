@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="glideOS">
+<meta name="theme-color" content="#0a0a0a">
+<title>glideOS</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --bg2: #111111;
+    --bg3: #1a1a1a;
+    --surface: #1e1e1e;
+    --border: #2a2a2a;
+    --text: #f0f0f0;
+    --text2: #888888;
+    --text3: #555555;
+    --orange: #22c55e;
+    --orange-dim: rgba(34,197,94,0.13);
+    --green: #4caf50;
+    --blue: #2196F3;
+    --red: #ef5350;
+    --yellow: #ffd600;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; overflow: hidden; }
+
+  /* NAV */
+  #app { display: flex; flex-direction: column; height: 100vh; }
+  #nav {
+    display: flex; background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 0 4px; flex-shrink: 0; z-index: 100;
+  }
+  .nav-btn {
+    flex: 1; padding: 14px 4px 12px; background: none; border: none; color: var(--text2);
+    font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    cursor: pointer; transition: color 0.2s; border-bottom: 2px solid transparent; position: relative; top: 1px;
+  }
+  .nav-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
+  .nav-btn .nav-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+
+  /* PANELS */
+  .panel { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+  .panel.active { display: flex; }
+
+  /* ═══ FLIGHT MODE ═══ */
+  #panel-flight { background: var(--bg); }
+  .flight-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    padding: 16px; flex: 1; align-content: start;
+  }
+  .metric-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 14px; position: relative; overflow: hidden;
+  }
+  .metric-card.full { grid-column: 1 / -1; }
+  .metric-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--orange); opacity: 0.5;
+  }
+  .metric-label {
+    font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--text2); margin-bottom: 6px;
+  }
+  .metric-value {
+    font-family: 'Bebas Neue', sans-serif; font-size: 52px; line-height: 1;
+    color: var(--text); letter-spacing: 0.02em;
+  }
+  .metric-value.big { font-size: 72px; }
+  .metric-unit {
+    font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text2);
+    margin-top: 2px; letter-spacing: 0.1em;
+  }
+  .vario-display {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .vario-val {
+    font-family: 'Bebas Neue', sans-serif; font-size: 64px; line-height: 1; letter-spacing: 0.02em;
+  }
+  .vario-bar-wrap {
+    flex: 1; height: 60px; background: var(--bg3); border-radius: 4px; overflow: hidden;
+    display: flex; flex-direction: column; justify-content: center; position: relative;
+  }
+  .vario-bar-center { position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--border); }
+  .vario-bar {
+    position: absolute; left: 0; right: 0; background: var(--green);
+    transition: height 0.3s, top 0.3s, background 0.3s; border-radius: 2px;
+  }
+
+  .status-bar {
+    display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+    background: var(--bg2); border-top: 1px solid var(--border); flex-shrink: 0;
+  }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+  .status-dot.active { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 1.5s infinite; }
+  .status-dot.searching { background: var(--yellow); animation: pulse 0.8s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .status-text { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text2); letter-spacing: 0.08em; flex: 1; }
+  .time-display { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--orange); letter-spacing: 0.05em; }
+
+  .start-btn-wrap { padding: 12px 16px 16px; flex-shrink: 0; }
+  .start-btn {
+    width: 100%; padding: 18px; border: none; border-radius: var(--radius);
+    font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 0.1em;
+    cursor: pointer; transition: all 0.15s; background: var(--orange); color: white;
+  }
+  .start-btn:active { transform: scale(0.97); }
+  .start-btn.recording { background: #b71c1c; }
+  .start-btn.recording { animation: rec-pulse 2s infinite; }
+  @keyframes rec-pulse { 0%,100%{background:#b71c1c} 50%{background:#ef5350} }
+
+  .ac-selector {
+    display: flex; gap: 8px; padding: 0 16px 12px; flex-shrink: 0;
+  }
+  .ac-btn {
+    flex: 1; padding: 8px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text2); font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.1em; cursor: pointer; transition: all 0.15s; text-transform: uppercase;
+  }
+  .ac-btn.active { background: var(--orange-dim); border-color: var(--orange); color: var(--orange); }
+
+  .gps-error {
+    margin: 16px; padding: 14px; background: rgba(239,83,80,0.1); border: 1px solid var(--red);
+    border-radius: var(--radius); font-size: 13px; color: var(--red); text-align: center; display: none;
+  }
+  .gps-error.show { display: block; }
+
+  /* ═══ TT MODE ═══ */
+  #panel-tt { background: var(--bg); }
+  #tt-map { flex: 1; min-height: 0; }
+  #tt-stats {
+    background: var(--bg2); border-top: 1px solid var(--border);
+    padding: 14px 16px; flex-shrink: 0; max-height: 45vh; overflow-y: auto;
+  }
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .stats-row.four { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .stat-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
+  }
+  .stat-box-label { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text2); }
+  .stat-box-val { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--text); letter-spacing: 0.03em; margin-top: 2px; }
+  .stat-box-val.orange { color: var(--orange); }
+  .tt-ac-row {
+    display: flex; gap: 8px; align-items: center; margin-bottom: 10px;
+  }
+  .tt-ac-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text2); letter-spacing: 0.1em; white-space: nowrap; }
+  .tt-ac-select {
+    flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: 'DM Mono', monospace; font-size: 11px; padding: 8px 10px;
+    appearance: none;
+  }
+  .analyze-btn {
+    width: 100%; padding: 12px; border: none; border-radius: 8px; background: var(--orange);
+    color: white; font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.1em;
+    cursor: pointer; margin-bottom: 10px;
+  }
+  .analyze-btn:active { opacity: 0.8; }
+  .no-track-msg {
+    text-align: center; padding: 24px; font-family: 'DM Mono', monospace;
+    font-size: 12px; color: var(--text3); letter-spacing: 0.1em; line-height: 2;
+  }
+
+  /* legend */
+  .tt-legend { display: flex; gap: 12px; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 12px; height: 4px; border-radius: 2px; }
+  .legend-text { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* ═══ STORY MODE ═══ */
+  #panel-story { background: var(--bg); overflow-y: auto; }
+  .story-wrap { display: flex; flex-direction: column; align-items: center; padding: 16px; gap: 12px; }
+  .story-frame-container {
+    width: 100%; max-width: 360px; position: relative;
+  }
+  #story-canvas-wrap {
+    width: 100%;
+    aspect-ratio: 9/16;
+    background: #0d0d0d;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 32px 28px 24px;
+  }
+  .story-top { width: 100%; }
+  .story-subtitle {
+    font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.2em;
+    text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 6px;
+  }
+  .story-ac-name {
+    font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.15em;
+    color: rgba(255,255,255,0.5);
+  }
+  .story-date {
+    font-family: 'DM Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.3);
+    margin-top: 4px; letter-spacing: 0.1em;
+  }
+  .story-mid { width: 100%; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .story-track-wrap {
+    width: 100%; height: 180px; position: relative; margin: 16px 0;
+  }
+  #story-track-canvas { width: 100%; height: 100%; }
+  .story-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; margin-top: 8px; }
+  .story-stat { background: rgba(255,255,255,0.04); padding: 14px 12px; }
+  .story-stat-label { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.35); }
+  .story-stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 32px; line-height: 1.1; color: #fff; letter-spacing: 0.02em; margin-top: 2px; }
+  .story-stat-unit { font-family: 'DM Mono', monospace; font-size: 9px; color: rgba(255,255,255,0.3); letter-spacing: 0.1em; }
+  .story-bottom { width: 100%; display: flex; align-items: center; justify-content: center; }
+  .story-logo {
+    font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.35em;
+    color: rgba(255,255,255,0.15); text-align: center;
+  }
+  .story-logo span { color: var(--orange); }
+
+  .story-action-btns { display: flex; gap: 10px; width: 100%; max-width: 360px; }
+  .story-btn {
+    flex: 1; padding: 14px; border: none; border-radius: var(--radius); cursor: pointer;
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.1em; transition: opacity 0.15s;
+  }
+  .story-btn:active { opacity: 0.75; }
+  .story-btn.primary { background: var(--orange); color: white; }
+  .story-btn.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+  .igc-btn-wrap { padding: 0 16px 16px; flex-shrink: 0; width: 100%; max-width: 360px; }
+  .igc-btn {
+    width: 100%; padding: 12px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text2); font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; text-align: center;
+  }
+  .igc-btn:active { opacity: 0.7; }
+
+  /* MAP CUSTOM */
+  .leaflet-container { background: #111 !important; }
+  .leaflet-tile { filter: brightness(0.7) saturate(0.6) !important; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    padding: 10px 20px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text);
+    letter-spacing: 0.08em; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity 0.3s;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="nav">
+    <button class="nav-btn active" onclick="switchTab('flight')" id="nav-flight">
+      <span class="nav-icon">◉</span>FLIGHT
+    </button>
+    <button class="nav-btn" onclick="switchTab('tt')" id="nav-tt">
+      <span class="nav-icon">◈</span>ANALYSE
+    </button>
+    <button class="nav-btn" onclick="switchTab('story')" id="nav-story">
+      <span class="nav-icon">◻</span>STORY
+    </button>
+  </div>
+
+  <!-- ═══ FLIGHT PANEL ═══ -->
+  <div class="panel active" id="panel-flight">
+    <div class="ac-selector">
+      <button class="ac-btn active" id="ac-ask13" onclick="selectAC('ASK13')">ASK 13</button>
+      <button class="ac-btn" id="ac-ask21" onclick="selectAC('ASK21')">ASK 21B</button>
+    </div>
+    <div class="gps-error" id="gps-error">GPS-Zugriff verweigert.<br>Bitte in den Einstellungen erlauben.</div>
+    <div class="flight-grid">
+      <div class="metric-card">
+        <div class="metric-label">GS</div>
+        <div class="metric-value big" id="disp-gs">0</div>
+        <div class="metric-unit">km/h</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Kurs</div>
+        <div class="metric-value big" id="disp-hdg">---</div>
+        <div class="metric-unit">deg</div>
+      </div>
+      <div class="metric-card full">
+        <div class="metric-label">Vario (geglättet)</div>
+        <div class="vario-display">
+          <div class="vario-val" id="disp-vario" style="color: var(--text);">0.0</div>
+          <div class="vario-bar-wrap">
+            <div class="vario-bar-center"></div>
+            <div class="vario-bar" id="vario-bar" style="height:2px;top:calc(50% - 1px);"></div>
+          </div>
+        </div>
+        <div class="metric-unit">m/s</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">GPS Höhe</div>
+        <div class="metric-value" id="disp-alt">---</div>
+        <div class="metric-unit">m MSL</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Punkte</div>
+        <div class="metric-value" id="disp-pts">0</div>
+        <div class="metric-unit">GPS fixes</div>
+      </div>
+    </div>
+    <div class="status-bar">
+      <div class="status-dot" id="status-dot"></div>
+      <div class="status-text" id="status-text">GPS WARTEN…</div>
+      <div class="time-display" id="disp-time">00:00:00</div>
+    </div>
+    <div class="start-btn-wrap">
+      <button class="start-btn" id="start-btn" onclick="toggleRecording()">START</button>
+    </div>
+  </div>
+
+  <!-- ═══ TT PANEL ═══ -->
+  <div class="panel" id="panel-tt">
+    <div id="tt-map"></div>
+    <div id="tt-stats">
+      <div class="tt-ac-row">
+        <span class="tt-ac-label">FLUGZEUG</span>
+        <select class="tt-ac-select" id="tt-ac-select">
+          <option value="ASK13">ASK 13 (1:27 @ 72 km/h)</option>
+          <option value="ASK21">ASK 21B (1:34 @ 82 km/h)</option>
+        </select>
+      </div>
+      <button class="analyze-btn" onclick="analyzeTrack()">TRACK ANALYSIEREN</button>
+      <div id="tt-no-track" class="no-track-msg">KEIN TRACK VORHANDEN<br>— ERST FLUG AUFZEICHNEN —</div>
+      <div id="tt-results" style="display:none;">
+        <div class="tt-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#ef5350;"></div><span class="legend-text">Steigen</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#2196F3;"></div><span class="legend-text">Sinken</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#555;"></div><span class="legend-text">Vorflug</span></div>
+        </div>
+        <div class="stats-row four">
+          <div class="stat-box"><div class="stat-box-label">Flugzeit</div><div class="stat-box-val orange" id="st-duration">--</div></div>
+          <div class="stat-box"><div class="stat-box-label">Distanz</div><div class="stat-box-val" id="st-dist">--</div></div>
+          <div class="stat-box"><div class="stat-box-label">Max Höhe</div><div class="stat-box-val" id="st-maxalt">--</div></div>
+          <div class="stat-box"><div class="stat-box-label">Thermik %</div><div class="stat-box-val" id="st-thermicpct">--</div></div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-box-label">Ø Steigen</div><div class="stat-box-val" id="st-avgclimb">--</div></div>
+          <div class="stat-box"><div class="stat-box-label">Max Steigen</div><div class="stat-box-val" id="st-maxclimb">--</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ STORY PANEL ═══ -->
+  <div class="panel" id="panel-story">
+    <div class="story-wrap">
+      <div class="story-frame-container">
+        <div id="story-canvas-wrap">
+          <div class="story-top">
+            <div class="story-subtitle">glideOS · <span id="s-date">--.--.----</span></div>
+            <div class="story-ac-name" id="s-ac">ASK 13</div>
+          </div>
+          <div class="story-mid">
+            <div class="story-track-wrap">
+              <canvas id="story-track-canvas"></canvas>
+            </div>
+            <div class="story-stats-grid">
+              <div class="story-stat">
+                <div class="story-stat-label">Distance</div>
+                <div class="story-stat-val" id="s-dist">0.0</div>
+                <div class="story-stat-unit">KM</div>
+              </div>
+              <div class="story-stat">
+                <div class="story-stat-label">Duration</div>
+                <div class="story-stat-val" id="s-dur">0:00</div>
+                <div class="story-stat-unit">HH:MM:SS</div>
+              </div>
+              <div class="story-stat">
+                <div class="story-stat-label">Avg Glide</div>
+                <div class="story-stat-val" id="s-glide">1:--</div>
+                <div class="story-stat-unit">RATIO</div>
+              </div>
+              <div class="story-stat">
+                <div class="story-stat-label">Alt Gain</div>
+                <div class="story-stat-val" id="s-altgain">0</div>
+                <div class="story-stat-unit">METER</div>
+              </div>
+            </div>
+          </div>
+          <div class="story-bottom">
+            <div class="story-logo">glide<span>OS</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="story-action-btns">
+        <button class="story-btn secondary" onclick="refreshStory()">↻ REFRESH</button>
+        <button class="story-btn primary" onclick="exportStory()">⬇ PNG EXPORT</button>
+      </div>
+      <div style="width:100%;max-width:360px;">
+        <button class="igc-btn" onclick="downloadIGC()">⬇ IGC DATEI HERUNTERLADEN</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// AIRCRAFT DATA
+// ═══════════════════════════════════════════════════
+const AIRCRAFT = {
+  ASK13: { name: 'ASK 13', circleSpeed: 72, glide: 27, polar: [
+    {v:70,s:-0.65},{v:80,s:-0.75},{v:90,s:-0.92},{v:100,s:-1.15},{v:110,s:-1.45}
+  ]},
+  ASK21: { name: 'ASK 21B', circleSpeed: 82, glide: 34, polar: [
+    {v:80,s:-0.70},{v:90,s:-0.82},{v:100,s:-1.00},{v:110,s:-1.25},{v:120,s:-1.58}
+  ]}
+};
+let selectedAC = 'ASK13';
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let gpsWatchId = null;
+let isRecording = false;
+let track = []; // [{lat,lon,alt,ts,gs,hdg}]
+let flightStart = null;
+let timerInterval = null;
+let ttMap = null;
+let ttMapInit = false;
+let trackLayers = [];
+
+// Kalman / smoothing state
+let altBuffer = [];
+const ALT_SMOOTH_N = 5; // 5-point rolling average for vario
+
+// ═══════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  document.getElementById('nav-' + tab).classList.add('active');
+  if (tab === 'tt' && !ttMapInit) { initTTMap(); }
+  if (tab === 'story') { refreshStory(); }
+}
+
+// ═══════════════════════════════════════════════════
+// AIRCRAFT SELECT
+// ═══════════════════════════════════════════════════
+function selectAC(ac) {
+  selectedAC = ac;
+  document.getElementById('ac-ask13').classList.toggle('active', ac === 'ASK13');
+  document.getElementById('ac-ask21').classList.toggle('active', ac === 'ASK21');
+}
+
+// ═══════════════════════════════════════════════════
+// SMOOTHED VARIO
+// ═══════════════════════════════════════════════════
+function computeVario(newAlt, ts) {
+  altBuffer.push({ alt: newAlt, ts });
+  if (altBuffer.length > ALT_SMOOTH_N) altBuffer.shift();
+  if (altBuffer.length < 2) return 0;
+  const oldest = altBuffer[0];
+  const newest = altBuffer[altBuffer.length - 1];
+  const dt = (newest.ts - oldest.ts) / 1000;
+  if (dt < 0.5) return 0;
+  return (newest.alt - oldest.alt) / dt;
+}
+
+function updateVarioDisplay(vms) {
+  const el = document.getElementById('disp-vario');
+  const bar = document.getElementById('vario-bar');
+  el.textContent = (vms >= 0 ? '+' : '') + vms.toFixed(1);
+  el.style.color = vms > 0.3 ? 'var(--green)' : vms < -0.3 ? 'var(--blue)' : 'var(--text)';
+  const maxMs = 4;
+  const pct = Math.min(Math.abs(vms) / maxMs, 1);
+  const barH = pct * 50;
+  if (vms > 0.1) {
+    bar.style.background = 'var(--green)';
+    bar.style.height = barH + 'px';
+    bar.style.top = (30 - barH) + 'px';
+  } else if (vms < -0.1) {
+    bar.style.background = 'var(--blue)';
+    bar.style.height = barH + 'px';
+    bar.style.top = '30px';
+  } else {
+    bar.style.height = '2px';
+    bar.style.top = '29px';
+    bar.style.background = 'var(--border)';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// GPS
+// ═══════════════════════════════════════════════════
+function startGPS() {
+  if (!navigator.geolocation) {
+    showGPSError('GPS nicht verfügbar auf diesem Gerät.');
+    return;
+  }
+  const dot = document.getElementById('status-dot');
+  dot.className = 'status-dot searching';
+  document.getElementById('status-text').textContent = 'GPS SUCHE…';
+
+  gpsWatchId = navigator.geolocation.watchPosition(
+    onGPS,
+    onGPSError,
+    { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
+  );
+}
+
+function stopGPS() {
+  if (gpsWatchId !== null) {
+    navigator.geolocation.clearWatch(gpsWatchId);
+    gpsWatchId = null;
+  }
+}
+
+function onGPS(pos) {
+  const { latitude: lat, longitude: lon, altitude: alt, speed, heading } = pos.coords;
+  const ts = pos.timestamp;
+
+  const altM = alt || 0;
+  const gs = speed != null ? speed * 3.6 : 0;
+  const hdg = heading != null ? heading : null;
+  const vario = computeVario(altM, ts);
+
+  document.getElementById('disp-gs').textContent = Math.round(gs);
+  document.getElementById('disp-hdg').textContent = hdg != null ? Math.round(hdg) + '°' : '---';
+  document.getElementById('disp-alt').textContent = Math.round(altM);
+  updateVarioDisplay(vario);
+
+  const dot = document.getElementById('status-dot');
+  if (!isRecording) {
+    dot.className = 'status-dot active';
+    document.getElementById('status-text').textContent = 'GPS OK — ' + lat.toFixed(4) + ', ' + lon.toFixed(4);
+  }
+
+  if (isRecording) {
+    const pts = track.length;
+    if (pts === 0 || ts - track[pts-1].ts >= 900) {
+      track.push({ lat, lon, alt: altM, ts, gs, hdg: hdg || 0, vario });
+      document.getElementById('disp-pts').textContent = track.length;
+      saveTrack();
+    }
+  }
+}
+
+function onGPSError(err) {
+  document.getElementById('status-dot').className = 'status-dot';
+  document.getElementById('status-text').textContent = 'GPS FEHLER';
+  if (err.code === err.PERMISSION_DENIED) showGPSError();
+}
+
+function showGPSError(msg) {
+  const el = document.getElementById('gps-error');
+  if (msg) el.innerHTML = msg;
+  el.classList.add('show');
+}
+
+// ═══════════════════════════════════════════════════
+// RECORDING
+// ═══════════════════════════════════════════════════
+function toggleRecording() {
+  if (!isRecording) {
+    track = [];
+    altBuffer = [];
+    flightStart = Date.now();
+    isRecording = true;
+    document.getElementById('start-btn').textContent = 'STOPP';
+    document.getElementById('start-btn').classList.add('recording');
+    document.getElementById('status-dot').className = 'status-dot active';
+    document.getElementById('status-text').textContent = 'AUFZEICHNUNG LÄUFT';
+    document.getElementById('disp-pts').textContent = '0';
+    timerInterval = setInterval(updateTimer, 1000);
+    startGPS();
+  } else {
+    isRecording = false;
+    stopGPS();
+    clearInterval(timerInterval);
+    document.getElementById('start-btn').textContent = 'START';
+    document.getElementById('start-btn').classList.remove('recording');
+    document.getElementById('status-dot').className = 'status-dot';
+    document.getElementById('status-text').textContent = 'FLUG GESPEICHERT (' + track.length + ' PUNKTE)';
+    saveTrack();
+    showToast('Flug gespeichert — ' + track.length + ' GPS-Punkte');
+  }
+}
+
+function updateTimer() {
+  if (!flightStart) return;
+  const elapsed = Math.floor((Date.now() - flightStart) / 1000);
+  const h = Math.floor(elapsed / 3600);
+  const m = Math.floor((elapsed % 3600) / 60);
+  const s = elapsed % 60;
+  document.getElementById('disp-time').textContent =
+    String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+function saveTrack() {
+  try {
+    localStorage.setItem('glide_track', JSON.stringify(track));
+    localStorage.setItem('glide_ac', selectedAC);
+    localStorage.setItem('glide_flightstart', flightStart);
+  } catch(e) {}
+}
+
+function loadTrack() {
+  try {
+    const t = localStorage.getItem('glide_track');
+    const ac = localStorage.getItem('glide_ac');
+    const fs = localStorage.getItem('glide_flightstart');
+    if (t) track = JSON.parse(t);
+    if (ac) selectedAC = ac;
+    if (fs) flightStart = parseInt(fs);
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════
+// TT MAP
+// ═══════════════════════════════════════════════════
+function initTTMap() {
+  ttMap = L.map('tt-map', { zoomControl: true, attributionControl: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18
+  }).addTo(ttMap);
+  ttMapInit = true;
+  L.control.attribution({ position: 'bottomright', prefix: '' }).addTo(ttMap);
+  ttMap.getContainer().querySelector('.leaflet-bottom.leaflet-right').style.opacity = '0.3';
+}
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function headingDiff(h1, h2) {
+  let d = Math.abs(h1 - h2) % 360;
+  if (d > 180) d = 360 - d;
+  return d;
+}
+
+function analyzeTrack() {
+  loadTrack();
+  if (!track || track.length < 5) {
+    showToast('Kein Track — erst fliegen!');
+    return;
+  }
+
+  const ac = AIRCRAFT[selectedAC];
+  document.getElementById('tt-results').style.display = 'block';
+  document.getElementById('tt-no-track').style.display = 'none';
+
+  // Clear existing layers
+  trackLayers.forEach(l => ttMap.removeLayer(l));
+  trackLayers = [];
+
+  // Segment detection: thermic circle = heading changes > 180° in 15s window
+  const CIRCLE_WINDOW_S = 15;
+  const CIRCLE_THRESHOLD = 180;
+  const segments = [];
+  let i = 0;
+
+  while (i < track.length) {
+    // look ahead 15s
+    let j = i + 1;
+    let totalHdgChange = 0;
+    while (j < track.length && (track[j].ts - track[i].ts) / 1000 <= CIRCLE_WINDOW_S) {
+      totalHdgChange += headingDiff(track[j-1].hdg, track[j].hdg);
+      j++;
+    }
+    const isThermic = totalHdgChange >= CIRCLE_THRESHOLD;
+
+    // find end of this phase
+    let k = j;
+    while (k < track.length) {
+      let hdgChk = 0;
+      let l2 = k;
+      while (l2 < track.length && (track[l2].ts - track[k].ts) / 1000 <= CIRCLE_WINDOW_S) {
+        hdgChk += headingDiff(track[l2-1 < k ? k : l2-1].hdg, track[l2].hdg);
+        l2++;
+      }
+      const nextThermic = hdgChk >= CIRCLE_THRESHOLD;
+      if (nextThermic !== isThermic) break;
+      k++;
+    }
+
+    // avg vario in segment
+    const segPts = track.slice(i, k);
+    const avgVario = segPts.reduce((s, p) => s + (p.vario || 0), 0) / (segPts.length || 1);
+
+    segments.push({ start: i, end: k, thermic: isThermic, avgVario, pts: segPts });
+    i = k - 1;
+    if (i <= 0) i = 1;
+    if (k >= track.length) break;
+  }
+
+  // draw
+  let totalDist = 0;
+  let maxAlt = -Infinity;
+  let thermicTime = 0;
+  let totalTime = 0;
+  let climbRates = [];
+  let altGain = 0;
+  let glideDistances = [];
+  let glideLosses = [];
+
+  const bounds = [];
+
+  segments.forEach(seg => {
+    if (seg.pts.length < 2) return;
+    const latlngs = seg.pts.map(p => [p.lat, p.lon]);
+    bounds.push(...latlngs);
+
+    let color, weight;
+    if (seg.thermic) {
+      color = seg.avgVario > 0 ? '#ef5350' : '#2196F3';
+      weight = 4;
+    } else {
+      color = '#555';
+      weight = 2;
+    }
+
+    const pl = L.polyline(latlngs, { color, weight, opacity: 0.9 }).addTo(ttMap);
+    trackLayers.push(pl);
+
+    // calc stats per segment
+    for (let x = 1; x < seg.pts.length; x++) {
+      const d = haversine(seg.pts[x-1].lat, seg.pts[x-1].lon, seg.pts[x].lat, seg.pts[x].lon);
+      totalDist += d;
+      maxAlt = Math.max(maxAlt, seg.pts[x].alt);
+    }
+
+    const segDur = (seg.pts[seg.pts.length-1].ts - seg.pts[0].ts) / 1000;
+    totalTime += segDur;
+    if (seg.thermic) {
+      thermicTime += segDur;
+      const rise = seg.pts[seg.pts.length-1].alt - seg.pts[0].alt;
+      if (rise > 0) { altGain += rise; climbRates.push(seg.avgVario); }
+    } else {
+      const hDist = haversine(seg.pts[0].lat, seg.pts[0].lon, seg.pts[seg.pts.length-1].lat, seg.pts[seg.pts.length-1].lon);
+      const altLoss = seg.pts[0].alt - seg.pts[seg.pts.length-1].alt;
+      if (altLoss > 0 && hDist > 0) {
+        glideDistances.push(hDist);
+        glideLosses.push(altLoss);
+      }
+    }
+  });
+
+  // start/end markers
+  if (track.length > 0) {
+    const startM = L.circleMarker([track[0].lat, track[0].lon], { radius: 6, color: '#4caf50', fillColor: '#4caf50', fillOpacity: 1 }).addTo(ttMap);
+    const endM = L.circleMarker([track[track.length-1].lat, track[track.length-1].lon], { radius: 6, color: '#22c55e', fillColor: '#22c55e', fillOpacity: 1 }).addTo(ttMap);
+    trackLayers.push(startM, endM);
+  }
+
+  if (bounds.length > 0) ttMap.fitBounds(bounds, { padding: [30,30] });
+
+  // fill stats
+  const durStr = fmtDuration(totalTime);
+  const distKm = (totalDist / 1000).toFixed(1);
+  const thermicPct = totalTime > 0 ? Math.round(thermicTime / totalTime * 100) : 0;
+  const avgClimb = climbRates.length > 0 ? (climbRates.reduce((a,b) => a+b) / climbRates.length).toFixed(1) : '—';
+  const maxClimb = climbRates.length > 0 ? Math.max(...climbRates).toFixed(1) : '—';
+
+  document.getElementById('st-duration').textContent = durStr;
+  document.getElementById('st-dist').textContent = distKm + ' km';
+  document.getElementById('st-maxalt').textContent = maxAlt > -Infinity ? Math.round(maxAlt) + 'm' : '—';
+  document.getElementById('st-thermicpct').textContent = thermicPct + '%';
+  document.getElementById('st-avgclimb').textContent = avgClimb + ' m/s';
+  document.getElementById('st-maxclimb').textContent = maxClimb + ' m/s';
+
+  showToast('Analyse fertig — ' + segments.length + ' Segmente');
+}
+
+// ═══════════════════════════════════════════════════
+// STORY
+// ═══════════════════════════════════════════════════
+function refreshStory() {
+  loadTrack();
+
+  const ac = AIRCRAFT[selectedAC] || AIRCRAFT.ASK13;
+  document.getElementById('s-ac').textContent = ac.name;
+
+  if (!track || track.length < 2) {
+    document.getElementById('s-dist').textContent = '0.0';
+    document.getElementById('s-dur').textContent = '0:00';
+    document.getElementById('s-glide').textContent = '1:' + ac.glide;
+    document.getElementById('s-altgain').textContent = '0';
+    document.getElementById('s-date').textContent = '--.--.----';
+    drawStoryTrack([]);
+    return;
+  }
+
+  // date from first point
+  const d = new Date(track[0].ts);
+  document.getElementById('s-date').textContent =
+    String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + d.getFullYear();
+
+  // distance
+  let totalDist = 0;
+  for (let i = 1; i < track.length; i++) {
+    totalDist += haversine(track[i-1].lat, track[i-1].lon, track[i].lat, track[i].lon);
+  }
+
+  // duration
+  const dur = (track[track.length-1].ts - track[0].ts) / 1000;
+
+  // alt gain & glide ratio from gliding phases
+  let altGain = 0;
+  let glideDist = 0;
+  let glideDrop = 0;
+
+  for (let i = 1; i < track.length; i++) {
+    const dA = track[i].alt - track[i-1].alt;
+    const dD = haversine(track[i-1].lat, track[i-1].lon, track[i].lat, track[i].lon);
+    if (dA > 0) altGain += dA;
+    if (dA < 0 && dD > 0) {
+      glideDist += dD;
+      glideDrop += Math.abs(dA);
+    }
+  }
+
+  const glideRatio = glideDrop > 0 ? Math.round(glideDist / glideDrop) : ac.glide;
+
+  document.getElementById('s-dist').textContent = (totalDist / 1000).toFixed(1);
+  document.getElementById('s-dur').textContent = fmtDuration(dur);
+  document.getElementById('s-glide').textContent = '1:' + glideRatio;
+  document.getElementById('s-altgain').textContent = Math.round(altGain);
+
+  drawStoryTrack(track);
+}
+
+function drawStoryTrack(pts) {
+  const canvas = document.getElementById('story-track-canvas');
+  const wrap = canvas.parentElement;
+  canvas.width = wrap.offsetWidth * 2;
+  canvas.height = wrap.offsetHeight * 2;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!pts || pts.length < 2) {
+    ctx.strokeStyle = 'rgba(255,87,34,0.2)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([8, 8]);
+    ctx.beginPath();
+    ctx.moveTo(canvas.width * 0.1, canvas.height * 0.5);
+    ctx.lineTo(canvas.width * 0.9, canvas.height * 0.5);
+    ctx.stroke();
+    return;
+  }
+
+  const lats = pts.map(p => p.lat);
+  const lons = pts.map(p => p.lon);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+  const pad = 40;
+
+  const w = canvas.width - pad*2, h = canvas.height - pad*2;
+  const latRange = maxLat - minLat || 0.001;
+  const lonRange = maxLon - minLon || 0.001;
+  const scale = Math.min(w / lonRange, h / latRange);
+  const offX = (w - lonRange * scale) / 2;
+  const offY = (h - latRange * scale) / 2;
+
+  const toX = lon => pad + offX + (lon - minLon) * scale;
+  const toY = lat => pad + offY + (maxLat - lat) * scale;
+
+  // glow
+  ctx.shadowColor = '#22c55e';
+  ctx.shadowBlur = 18;
+  ctx.strokeStyle = '#22c55e';
+  ctx.lineWidth = 4;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.setLineDash([]);
+
+  ctx.beginPath();
+  ctx.moveTo(toX(pts[0].lon), toY(pts[0].lat));
+  for (let i = 1; i < pts.length; i++) {
+    ctx.lineTo(toX(pts[i].lon), toY(pts[i].lat));
+  }
+  ctx.stroke();
+
+  // Start dot
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#4caf50';
+  ctx.beginPath();
+  ctx.arc(toX(pts[0].lon), toY(pts[0].lat), 8, 0, Math.PI*2);
+  ctx.fill();
+
+  // End dot
+  ctx.fillStyle = '#22c55e';
+  ctx.beginPath();
+  ctx.arc(toX(pts[pts.length-1].lon), toY(pts[pts.length-1].lat), 8, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function exportStory() {
+  const el = document.getElementById('story-canvas-wrap');
+  html2canvas(el, {
+    backgroundColor: '#0d0d0d',
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    logging: false
+  }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = 'glide-story-' + Date.now() + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('Story als PNG gespeichert!');
+  }).catch(() => {
+    showToast('Export fehlgeschlagen');
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// IGC EXPORT
+// ═══════════════════════════════════════════════════
+function downloadIGC() {
+  loadTrack();
+  if (!track || track.length < 2) {
+    showToast('Kein Track zum Exportieren');
+    return;
+  }
+
+  const ac = AIRCRAFT[selectedAC];
+  const lines = [];
+  lines.push('AXXX glideOS');
+  lines.push('HFDTE' + fmtIGCDate(new Date(track[0].ts)));
+  lines.push('HFPLTPILOT: Pilot');
+  lines.push('HFGTYGLIDERTYPE: ' + ac.name);
+  lines.push('HFRFWFIRMWAREVERSION: 1.0');
+  lines.push('B RECORD START');
+
+  track.forEach(pt => {
+    const d = new Date(pt.ts);
+    const hh = String(d.getUTCHours()).padStart(2,'0');
+    const mm = String(d.getUTCMinutes()).padStart(2,'0');
+    const ss = String(d.getUTCSeconds()).padStart(2,'0');
+    const time = hh + mm + ss;
+
+    const latD = Math.abs(pt.lat);
+    const latDeg = Math.floor(latD);
+    const latMin = ((latD - latDeg) * 60000).toFixed(0).padStart(5,'0');
+    const latHem = pt.lat >= 0 ? 'N' : 'S';
+
+    const lonD = Math.abs(pt.lon);
+    const lonDeg = Math.floor(lonD);
+    const lonMin = ((lonD - lonDeg) * 60000).toFixed(0).padStart(5,'0');
+    const lonHem = pt.lon >= 0 ? 'E' : 'W';
+
+    const alt = Math.max(0, Math.round(pt.alt));
+    const altStr = String(alt).padStart(5,'0');
+
+    lines.push(`B${time}${String(latDeg).padStart(2,'0')}${latMin}${latHem}${String(lonDeg).padStart(3,'0')}${lonMin}${lonHem}A${altStr}${altStr}`);
+  });
+
+  lines.push('LglideOS EXPORT');
+
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'glide_' + fmtIGCDate(new Date(track[0].ts)) + '.igc';
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast('IGC exportiert!');
+}
+
+function fmtIGCDate(d) {
+  return String(d.getDate()).padStart(2,'0') +
+    String(d.getMonth()+1).padStart(2,'0') +
+    String(d.getFullYear()).slice(2);
+}
+
+// ═══════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════
+function fmtDuration(sec) {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60);
+  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+let toastTimeout = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  if (toastTimeout) clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════════════════════
+// PWA SERVICE WORKER (inline)
+// ═══════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  const swContent = `
+self.addEventListener('install', e => self.skipWaiting());
+self.addEventListener('activate', e => clients.claim());
+self.addEventListener('fetch', e => {
+  e.respondWith(fetch(e.request).catch(() => new Response('Offline')));
+});
+`;
+  const blob = new Blob([swContent], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(() => {});
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+loadTrack();
+startGPS();
+
+// auto-update display time if flight was in progress
+if (isRecording && flightStart) {
+  timerInterval = setInterval(updateTimer, 1000);
+}
+
+// resize story canvas on show
+window.addEventListener('resize', () => {
+  if (document.getElementById('panel-story').classList.contains('active')) {
+    refreshStory();
+  }
+});
+</script>
+</body>
+</html>
