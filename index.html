@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="glideOS">
@@ -11,259 +11,465 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0a0a;
-    --bg2: #111111;
-    --bg3: #1a1a1a;
-    --surface: #1e1e1e;
-    --border: #2a2a2a;
-    --text: #f0f0f0;
-    --text2: #888888;
-    --text3: #555555;
-    --orange: #22c55e;
-    --orange-dim: rgba(34,197,94,0.13);
-    --green: #4caf50;
-    --blue: #2196F3;
-    --red: #ef5350;
-    --yellow: #ffd600;
-    --radius: 12px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; overflow: hidden; }
+:root {
+  --bg: #0a0a0a;
+  --bg2: #111;
+  --bg3: #181818;
+  --surface: #1c1c1c;
+  --border: #2a2a2a;
+  --text: #f0f0f0;
+  --text2: #777;
+  --text3: #444;
+  --acc: #22c55e;
+  --acc-dim: rgba(34,197,94,0.12);
+  --acc-glow: rgba(34,197,94,0.3);
+  --red: #ef5350;
+  --blue: #38bdf8;
+  --yellow: #fbbf24;
+  --radius: 14px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-  /* NAV */
-  #app { display: flex; flex-direction: column; height: 100vh; }
-  #nav {
-    display: flex; background: var(--bg2); border-bottom: 1px solid var(--border);
-    padding: 0 4px; flex-shrink: 0; z-index: 100;
-  }
-  .nav-btn {
-    flex: 1; padding: 14px 4px 12px; background: none; border: none; color: var(--text2);
-    font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
-    cursor: pointer; transition: color 0.2s; border-bottom: 2px solid transparent; position: relative; top: 1px;
-  }
-  .nav-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
-  .nav-btn .nav-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+html { height: 100%; height: -webkit-fill-available; }
+body {
+  height: 100%;
+  height: -webkit-fill-available;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+  touch-action: pan-y;
+}
 
-  /* PANELS */
-  .panel { display: none; flex: 1; overflow: hidden; flex-direction: column; }
-  .panel.active { display: flex; }
+/* ── APP SHELL ── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: -webkit-fill-available;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bot);
+}
 
-  /* ═══ FLIGHT MODE ═══ */
-  #panel-flight { background: var(--bg); }
-  .flight-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-    padding: 16px; flex: 1; align-content: start;
-  }
-  .metric-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 16px 14px; position: relative; overflow: hidden;
-  }
-  .metric-card.full { grid-column: 1 / -1; }
-  .metric-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: var(--orange); opacity: 0.5;
-  }
-  .metric-label {
-    font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.15em;
-    text-transform: uppercase; color: var(--text2); margin-bottom: 6px;
-  }
-  .metric-value {
-    font-family: 'Bebas Neue', sans-serif; font-size: 52px; line-height: 1;
-    color: var(--text); letter-spacing: 0.02em;
-  }
-  .metric-value.big { font-size: 72px; }
-  .metric-unit {
-    font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text2);
-    margin-top: 2px; letter-spacing: 0.1em;
-  }
-  .vario-display {
-    display: flex; align-items: center; gap: 8px;
-  }
-  .vario-val {
-    font-family: 'Bebas Neue', sans-serif; font-size: 64px; line-height: 1; letter-spacing: 0.02em;
-  }
-  .vario-bar-wrap {
-    flex: 1; height: 60px; background: var(--bg3); border-radius: 4px; overflow: hidden;
-    display: flex; flex-direction: column; justify-content: center; position: relative;
-  }
-  .vario-bar-center { position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--border); }
-  .vario-bar {
-    position: absolute; left: 0; right: 0; background: var(--green);
-    transition: height 0.3s, top 0.3s, background 0.3s; border-radius: 2px;
-  }
+/* ── TOP BAR ── */
+#topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px 8px;
+  flex-shrink: 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+}
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.15em;
+  color: var(--text);
+}
+.logo span { color: var(--acc); }
+#rec-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--text3); flex-shrink: 0;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+#rec-dot.gps { background: var(--acc); box-shadow: 0 0 6px var(--acc-glow); }
+#rec-dot.rec { background: var(--red); box-shadow: 0 0 8px rgba(239,83,80,0.5); animation: blink 1.2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-  .status-bar {
-    display: flex; align-items: center; gap: 8px; padding: 8px 16px;
-    background: var(--bg2); border-top: 1px solid var(--border); flex-shrink: 0;
-  }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
-  .status-dot.active { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 1.5s infinite; }
-  .status-dot.searching { background: var(--yellow); animation: pulse 0.8s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-  .status-text { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text2); letter-spacing: 0.08em; flex: 1; }
-  .time-display { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--orange); letter-spacing: 0.05em; }
+/* TikTok Overlay button */
+#tiktok-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 6px 12px; border-radius: 20px;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text2); font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+}
+#tiktok-btn.active {
+  background: var(--acc-dim); border-color: var(--acc); color: var(--acc);
+}
+#tiktok-btn .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-  .start-btn-wrap { padding: 12px 16px 16px; flex-shrink: 0; }
-  .start-btn {
-    width: 100%; padding: 18px; border: none; border-radius: var(--radius);
-    font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 0.1em;
-    cursor: pointer; transition: all 0.15s; background: var(--orange); color: white;
-  }
-  .start-btn:active { transform: scale(0.97); }
-  .start-btn.recording { background: #b71c1c; }
-  .start-btn.recording { animation: rec-pulse 2s infinite; }
-  @keyframes rec-pulse { 0%,100%{background:#b71c1c} 50%{background:#ef5350} }
+/* AC Selector in topbar */
+.ac-pills { display: flex; gap: 6px; }
+.ac-pill {
+  padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border);
+  background: transparent; color: var(--text3);
+  font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.08em;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.ac-pill.active { background: var(--acc-dim); border-color: var(--acc); color: var(--acc); }
 
-  .ac-selector {
-    display: flex; gap: 8px; padding: 0 16px 12px; flex-shrink: 0;
-  }
-  .ac-btn {
-    flex: 1; padding: 8px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; color: var(--text2); font-family: 'DM Mono', monospace; font-size: 10px;
-    letter-spacing: 0.1em; cursor: pointer; transition: all 0.15s; text-transform: uppercase;
-  }
-  .ac-btn.active { background: var(--orange-dim); border-color: var(--orange); color: var(--orange); }
+/* ── NAV ── */
+#nav {
+  display: flex;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.nav-btn {
+  flex: 1; padding: 11px 4px 9px;
+  background: none; border: none; color: var(--text3);
+  font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; cursor: pointer; transition: color 0.2s;
+  border-bottom: 2px solid transparent; position: relative; top: 1px;
+}
+.nav-btn.active { color: var(--acc); border-bottom-color: var(--acc); }
+.nav-icon { font-size: 15px; display: block; margin-bottom: 2px; }
 
-  .gps-error {
-    margin: 16px; padding: 14px; background: rgba(239,83,80,0.1); border: 1px solid var(--red);
-    border-radius: var(--radius); font-size: 13px; color: var(--red); text-align: center; display: none;
-  }
-  .gps-error.show { display: block; }
+/* ── PANELS ── */
+.panel {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+.panel.active { display: flex; }
+.panel-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
 
-  /* ═══ TT MODE ═══ */
-  #panel-tt { background: var(--bg); }
-  #tt-map { flex: 1; min-height: 0; }
-  #tt-stats {
-    background: var(--bg2); border-top: 1px solid var(--border);
-    padding: 14px 16px; flex-shrink: 0; max-height: 45vh; overflow-y: auto;
-  }
-  .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-  .stats-row.four { grid-template-columns: 1fr 1fr 1fr 1fr; }
-  .stat-box {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
-  }
-  .stat-box-label { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text2); }
-  .stat-box-val { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--text); letter-spacing: 0.03em; margin-top: 2px; }
-  .stat-box-val.orange { color: var(--orange); }
-  .tt-ac-row {
-    display: flex; gap: 8px; align-items: center; margin-bottom: 10px;
-  }
-  .tt-ac-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text2); letter-spacing: 0.1em; white-space: nowrap; }
-  .tt-ac-select {
-    flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-    color: var(--text); font-family: 'DM Mono', monospace; font-size: 11px; padding: 8px 10px;
-    appearance: none;
-  }
-  .analyze-btn {
-    width: 100%; padding: 12px; border: none; border-radius: 8px; background: var(--orange);
-    color: white; font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.1em;
-    cursor: pointer; margin-bottom: 10px;
-  }
-  .analyze-btn:active { opacity: 0.8; }
-  .no-track-msg {
-    text-align: center; padding: 24px; font-family: 'DM Mono', monospace;
-    font-size: 12px; color: var(--text3); letter-spacing: 0.1em; line-height: 2;
-  }
+/* ── FLIGHT PANEL ── */
+#panel-flight { background: var(--bg); }
 
-  /* legend */
-  .tt-legend { display: flex; gap: 12px; margin-bottom: 10px; }
-  .legend-item { display: flex; align-items: center; gap: 6px; }
-  .legend-dot { width: 12px; height: 4px; border-radius: 2px; }
-  .legend-text { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; }
+.flight-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 12px 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-content: start;
+}
 
-  /* ═══ STORY MODE ═══ */
-  #panel-story { background: var(--bg); overflow-y: auto; }
-  .story-wrap { display: flex; flex-direction: column; align-items: center; padding: 16px; gap: 12px; }
-  .story-frame-container {
-    width: 100%; max-width: 360px; position: relative;
-  }
-  #story-canvas-wrap {
-    width: 100%;
-    aspect-ratio: 9/16;
-    background: #0d0d0d;
-    border-radius: 16px;
-    overflow: hidden;
-    position: relative;
-    border: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    padding: 32px 28px 24px;
-  }
-  .story-top { width: 100%; }
-  .story-subtitle {
-    font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.2em;
-    text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 6px;
-  }
-  .story-ac-name {
-    font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.15em;
-    color: rgba(255,255,255,0.5);
-  }
-  .story-date {
-    font-family: 'DM Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.3);
-    margin-top: 4px; letter-spacing: 0.1em;
-  }
-  .story-mid { width: 100%; flex: 1; display: flex; flex-direction: column; justify-content: center; }
-  .story-track-wrap {
-    width: 100%; height: 180px; position: relative; margin: 16px 0;
-  }
-  #story-track-canvas { width: 100%; height: 100%; }
-  .story-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; margin-top: 8px; }
-  .story-stat { background: rgba(255,255,255,0.04); padding: 14px 12px; }
-  .story-stat-label { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.35); }
-  .story-stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 32px; line-height: 1.1; color: #fff; letter-spacing: 0.02em; margin-top: 2px; }
-  .story-stat-unit { font-family: 'DM Mono', monospace; font-size: 9px; color: rgba(255,255,255,0.3); letter-spacing: 0.1em; }
-  .story-bottom { width: 100%; display: flex; align-items: center; justify-content: center; }
-  .story-logo {
-    font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.35em;
-    color: rgba(255,255,255,0.15); text-align: center;
-  }
-  .story-logo span { color: var(--orange); }
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 12px;
+  position: relative;
+  overflow: hidden;
+}
+.metric-card.full { grid-column: 1 / -1; }
+.metric-card::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--acc) 0%, transparent 100%);
+  opacity: 0.6;
+}
+.metric-label {
+  font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--text2); margin-bottom: 4px;
+}
+.metric-value {
+  font-family: 'Bebas Neue', sans-serif; font-size: 48px; line-height: 1;
+  color: var(--text); letter-spacing: 0.02em;
+}
+.metric-value.xl { font-size: 62px; }
+.metric-unit {
+  font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text3);
+  margin-top: 1px; letter-spacing: 0.1em;
+}
 
-  .story-action-btns { display: flex; gap: 10px; width: 100%; max-width: 360px; }
-  .story-btn {
-    flex: 1; padding: 14px; border: none; border-radius: var(--radius); cursor: pointer;
-    font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.1em; transition: opacity 0.15s;
-  }
-  .story-btn:active { opacity: 0.75; }
-  .story-btn.primary { background: var(--orange); color: white; }
-  .story-btn.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+/* VARIO */
+.vario-row { display: flex; align-items: center; gap: 10px; }
+.vario-num {
+  font-family: 'Bebas Neue', sans-serif; font-size: 56px; line-height: 1;
+  letter-spacing: 0.02em; min-width: 100px;
+}
+.vario-bar-outer {
+  flex: 1; height: 56px; background: var(--bg3); border-radius: 6px;
+  position: relative; overflow: hidden;
+}
+.vario-center-line {
+  position: absolute; top: 50%; left: 0; right: 0;
+  height: 1px; background: var(--border);
+}
+.vario-fill {
+  position: absolute; left: 2px; right: 2px;
+  border-radius: 4px;
+  transition: height 0.25s ease, top 0.25s ease, background 0.25s;
+}
 
-  .igc-btn-wrap { padding: 0 16px 16px; flex-shrink: 0; width: 100%; max-width: 360px; }
-  .igc-btn {
-    width: 100%; padding: 12px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; color: var(--text2); font-family: 'DM Mono', monospace; font-size: 11px;
-    letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; text-align: center;
-  }
-  .igc-btn:active { opacity: 0.7; }
+/* MOTION CARD */
+.motion-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.motion-item { text-align: center; }
+.motion-val {
+  font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--text); letter-spacing: 0.02em;
+}
+.motion-lbl { font-family: 'DM Mono', monospace; font-size: 7px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; }
 
-  /* MAP CUSTOM */
-  .leaflet-container { background: #111 !important; }
-  .leaflet-tile { filter: brightness(0.7) saturate(0.6) !important; }
+/* STATUS + REC BUTTON */
+.flight-footer {
+  flex-shrink: 0;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  padding: 10px 12px;
+}
+.status-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+}
+.status-glow {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text3); flex-shrink: 0;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.status-glow.on { background: var(--acc); box-shadow: 0 0 8px var(--acc-glow); }
+.status-glow.search { background: var(--yellow); animation: blink 0.7s infinite; }
+.status-glow.err { background: var(--red); }
+.status-txt {
+  font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text2);
+  letter-spacing: 0.06em; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.elapsed {
+  font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--acc); letter-spacing: 0.05em;
+}
+.start-btn {
+  width: 100%; padding: 16px;
+  border: none; border-radius: 12px;
+  font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 0.12em;
+  cursor: pointer; transition: transform 0.1s, background 0.2s;
+  background: var(--acc); color: #000; font-weight: 700;
+}
+.start-btn:active { transform: scale(0.97); }
+.start-btn.recording { background: var(--red); color: #fff; }
+.perm-btn {
+  width: 100%; padding: 10px;
+  margin-bottom: 8px;
+  border: 1px dashed var(--border); border-radius: 10px;
+  background: transparent; color: var(--text2);
+  font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.08em;
+  cursor: pointer; text-align: center; display: none;
+}
+.perm-btn.show { display: block; }
 
-  /* SCROLLBAR */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+/* GPS Error */
+.gps-err {
+  display: none; margin: 12px; padding: 12px;
+  background: rgba(239,83,80,0.08); border: 1px solid var(--red);
+  border-radius: 10px; font-size: 12px; color: var(--red); text-align: center;
+  font-family: 'DM Mono', monospace; letter-spacing: 0.06em;
+}
+.gps-err.show { display: block; }
 
-  /* TOAST */
-  #toast {
-    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
-    padding: 10px 20px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text);
-    letter-spacing: 0.08em; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity 0.3s;
-    white-space: nowrap;
-  }
-  #toast.show { opacity: 1; }
+/* ── TIKTOK OVERLAY ── */
+#tiktok-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 500;
+  padding: var(--safe-top) 0 var(--safe-bot);
+}
+#tiktok-overlay.show { display: flex; flex-direction: column; }
+.tiktok-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px 18px;
+}
+.tiktok-top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+}
+.tiktok-logo {
+  font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.5);
+}
+.tiktok-logo span { color: var(--acc); }
+.tiktok-rec-badge {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(239,83,80,0.9); border-radius: 20px;
+  padding: 4px 10px;
+  font-family: 'DM Mono', monospace; font-size: 9px; color: #fff; letter-spacing: 0.1em;
+}
+.tiktok-rec-badge .dot { width: 5px; height: 5px; border-radius: 50%; background: #fff; animation: blink 1s infinite; }
+.tiktok-mid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.tiktok-big {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 72px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: #fff;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+  -webkit-text-stroke: 0.5px rgba(255,255,255,0.1);
+}
+.tiktok-big span { color: var(--acc); font-size: 28px; vertical-align: super; }
+.tiktok-sub {
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+.tiktok-row {
+  display: flex; gap: 20px; align-items: baseline;
+}
+.tiktok-stat { }
+.tiktok-stat-val {
+  font-family: 'Bebas Neue', sans-serif; font-size: 36px;
+  color: #fff; line-height: 1;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.7);
+}
+.tiktok-stat-lbl {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  color: rgba(255,255,255,0.4); letter-spacing: 0.12em; text-transform: uppercase;
+}
+.tiktok-vario-row { display: flex; align-items: center; gap: 8px; }
+.tiktok-vario-val {
+  font-family: 'Bebas Neue', sans-serif; font-size: 48px; line-height: 1;
+}
+.tiktok-vario-lbl {
+  font-family: 'DM Mono', monospace; font-size: 9px; color: rgba(255,255,255,0.4);
+  letter-spacing: 0.12em;
+}
+.tiktok-bottom {
+  display: flex; align-items: flex-end; justify-content: space-between;
+}
+.tiktok-ac {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  color: rgba(255,255,255,0.35); letter-spacing: 0.12em; text-transform: uppercase;
+}
+.tiktok-time {
+  font-family: 'Bebas Neue', sans-serif; font-size: 28px;
+  color: rgba(255,255,255,0.7); letter-spacing: 0.05em;
+}
+
+/* ── TT PANEL ── */
+#panel-tt { }
+#tt-map { flex: 1; min-height: 0; }
+.tt-bottom {
+  background: var(--bg2); border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  max-height: 42vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px;
+}
+.tt-ac-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+.tt-ac-lbl { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text2); letter-spacing: 0.1em; white-space: nowrap; }
+.tt-ac-sel {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 10px;
+  padding: 7px 10px; appearance: none; -webkit-appearance: none;
+}
+.analyze-btn {
+  width: 100%; padding: 12px; border: none; border-radius: 10px;
+  background: var(--acc); color: #000;
+  font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.1em;
+  cursor: pointer; margin-bottom: 10px; font-weight: 700;
+}
+.analyze-btn:active { opacity: 0.8; }
+.no-track { text-align: center; padding: 20px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); letter-spacing: 0.1em; line-height: 2; }
+.tt-legend { display: flex; gap: 12px; margin-bottom: 8px; }
+.leg-item { display: flex; align-items: center; gap: 5px; }
+.leg-dot { width: 10px; height: 3px; border-radius: 2px; }
+.leg-txt { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stats-grid.four { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; }
+.stat-box-lbl { font-family: 'DM Mono', monospace; font-size: 7px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text2); }
+.stat-box-val { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--text); letter-spacing: 0.02em; margin-top: 1px; }
+.stat-box-val.acc { color: var(--acc); }
+
+/* ── STORY PANEL ── */
+#panel-story { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.story-wrap { display: flex; flex-direction: column; align-items: center; padding: 12px 12px 20px; gap: 12px; }
+.story-frame {
+  width: 100%; max-width: 340px;
+  aspect-ratio: 9/16;
+  background: #0d0d0d;
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: space-between;
+  padding: 30px 24px 22px;
+}
+.s-top { width: 100%; }
+.s-subtitle { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 4px; }
+.s-acname { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.15em; color: rgba(255,255,255,0.45); }
+.s-mid { width: 100%; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.s-track-wrap { width: 100%; height: 160px; position: relative; margin: 14px 0; }
+#s-track-canvas { width: 100%; height: 100%; }
+.s-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; }
+.s-stat { background: rgba(255,255,255,0.03); padding: 13px 11px; }
+.s-stat-lbl { font-family: 'DM Mono', monospace; font-size: 7px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.3); }
+.s-stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 30px; line-height: 1.1; color: #fff; letter-spacing: 0.02em; margin-top: 1px; }
+.s-stat-unit { font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(255,255,255,0.25); letter-spacing: 0.1em; }
+.s-bottom { width: 100%; display: flex; align-items: center; justify-content: center; }
+.s-logo { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.4em; color: rgba(255,255,255,0.12); }
+.s-logo span { color: var(--acc); }
+.story-btns { display: flex; gap: 8px; width: 100%; max-width: 340px; }
+.s-btn {
+  flex: 1; padding: 13px; border: none; border-radius: 12px; cursor: pointer;
+  font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 0.1em;
+}
+.s-btn:active { opacity: 0.75; }
+.s-btn.primary { background: var(--acc); color: #000; font-weight: 700; }
+.s-btn.sec { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.igc-btn {
+  width: 100%; max-width: 340px; padding: 11px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  color: var(--text2); font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; text-align: center;
+}
+.igc-btn:active { opacity: 0.7; }
+
+/* MAP */
+.leaflet-container { background: #111 !important; }
+.leaflet-tile { filter: brightness(0.65) saturate(0.5) !important; }
+
+/* TOAST */
+#toast {
+  position: fixed; bottom: calc(var(--safe-bot) + 90px); left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+  padding: 9px 18px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text);
+  letter-spacing: 0.07em; z-index: 9999; pointer-events: none; opacity: 0;
+  transition: opacity 0.25s; white-space: nowrap;
+}
+#toast.show { opacity: 1; }
+
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 </style>
 </head>
 <body>
+
 <div id="app">
+
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <div class="logo">glide<span>OS</span></div>
+    <div class="ac-pills">
+      <button class="ac-pill active" id="ac-ask13" onclick="selectAC('ASK13')">ASK 13</button>
+      <button class="ac-pill" id="ac-ask21" onclick="selectAC('ASK21')">ASK 21B</button>
+    </div>
+    <button id="tiktok-btn" onclick="toggleTikTok()">
+      <div class="dot"></div>REC
+    </button>
+    <div id="rec-dot"></div>
+  </div>
+
+  <!-- NAV -->
   <div id="nav">
     <button class="nav-btn active" onclick="switchTab('flight')" id="nav-flight">
       <span class="nav-icon">◉</span>FLIGHT
@@ -276,137 +482,186 @@
     </button>
   </div>
 
-  <!-- ═══ FLIGHT PANEL ═══ -->
+  <!-- ═══ FLIGHT ═══ -->
   <div class="panel active" id="panel-flight">
-    <div class="ac-selector">
-      <button class="ac-btn active" id="ac-ask13" onclick="selectAC('ASK13')">ASK 13</button>
-      <button class="ac-btn" id="ac-ask21" onclick="selectAC('ASK21')">ASK 21B</button>
-    </div>
-    <div class="gps-error" id="gps-error">GPS-Zugriff verweigert.<br>Bitte in den Einstellungen erlauben.</div>
-    <div class="flight-grid">
+    <div class="gps-err" id="gps-err">GPS-Zugriff verweigert — Einstellungen öffnen</div>
+
+    <div class="flight-scroll" id="flight-scroll">
       <div class="metric-card">
         <div class="metric-label">GS</div>
-        <div class="metric-value big" id="disp-gs">0</div>
+        <div class="metric-value xl" id="disp-gs">0</div>
         <div class="metric-unit">km/h</div>
       </div>
       <div class="metric-card">
         <div class="metric-label">Kurs</div>
-        <div class="metric-value big" id="disp-hdg">---</div>
+        <div class="metric-value xl" id="disp-hdg">---</div>
         <div class="metric-unit">deg</div>
       </div>
       <div class="metric-card full">
         <div class="metric-label">Vario (geglättet)</div>
-        <div class="vario-display">
-          <div class="vario-val" id="disp-vario" style="color: var(--text);">0.0</div>
-          <div class="vario-bar-wrap">
-            <div class="vario-bar-center"></div>
-            <div class="vario-bar" id="vario-bar" style="height:2px;top:calc(50% - 1px);"></div>
+        <div class="vario-row">
+          <div class="vario-num" id="disp-vario">0.0</div>
+          <div class="vario-bar-outer">
+            <div class="vario-center-line"></div>
+            <div class="vario-fill" id="vario-fill" style="height:2px;top:27px;background:var(--border)"></div>
           </div>
         </div>
         <div class="metric-unit">m/s</div>
       </div>
       <div class="metric-card">
-        <div class="metric-label">GPS Höhe</div>
+        <div class="metric-label">Höhe GPS</div>
         <div class="metric-value" id="disp-alt">---</div>
         <div class="metric-unit">m MSL</div>
       </div>
       <div class="metric-card">
-        <div class="metric-label">Punkte</div>
+        <div class="metric-label">Fixes</div>
         <div class="metric-value" id="disp-pts">0</div>
-        <div class="metric-unit">GPS fixes</div>
+        <div class="metric-unit">GPS punkte</div>
+      </div>
+      <div class="metric-card full" id="motion-card" style="display:none">
+        <div class="metric-label">IMU · Beschleunigung (g)</div>
+        <div class="motion-grid">
+          <div class="motion-item">
+            <div class="motion-val" id="m-ax">0.0</div>
+            <div class="motion-lbl">X</div>
+          </div>
+          <div class="motion-item">
+            <div class="motion-val" id="m-ay">0.0</div>
+            <div class="motion-lbl">Y</div>
+          </div>
+          <div class="motion-item">
+            <div class="motion-val" id="m-az">0.0</div>
+            <div class="motion-lbl">Z</div>
+          </div>
+        </div>
+        <div class="metric-unit" style="margin-top:6px">Rollrate: <span id="m-roll">0.0</span>°/s &nbsp;|&nbsp; Pitch: <span id="m-pitch">0.0</span>°/s</div>
       </div>
     </div>
-    <div class="status-bar">
-      <div class="status-dot" id="status-dot"></div>
-      <div class="status-text" id="status-text">GPS WARTEN…</div>
-      <div class="time-display" id="disp-time">00:00:00</div>
-    </div>
-    <div class="start-btn-wrap">
+
+    <div class="flight-footer">
+      <button class="perm-btn" id="motion-perm-btn" onclick="requestMotion()">
+        ⚡ MOTION-SENSOR AKTIVIEREN (iPhone)
+      </button>
+      <div class="status-row">
+        <div class="status-glow" id="status-glow"></div>
+        <div class="status-txt" id="status-txt">GPS INITIALISIERUNG…</div>
+        <div class="elapsed" id="disp-time">00:00:00</div>
+      </div>
       <button class="start-btn" id="start-btn" onclick="toggleRecording()">START</button>
     </div>
   </div>
 
-  <!-- ═══ TT PANEL ═══ -->
+  <!-- ═══ TT ANALYSE ═══ -->
   <div class="panel" id="panel-tt">
     <div id="tt-map"></div>
-    <div id="tt-stats">
+    <div class="tt-bottom">
       <div class="tt-ac-row">
-        <span class="tt-ac-label">FLUGZEUG</span>
-        <select class="tt-ac-select" id="tt-ac-select">
-          <option value="ASK13">ASK 13 (1:27 @ 72 km/h)</option>
-          <option value="ASK21">ASK 21B (1:34 @ 82 km/h)</option>
+        <span class="tt-ac-lbl">FLUGZEUG</span>
+        <select class="tt-ac-sel" id="tt-ac-sel">
+          <option value="ASK13">ASK 13 (1:27 / 72 km/h)</option>
+          <option value="ASK21">ASK 21B (1:34 / 82 km/h)</option>
         </select>
       </div>
       <button class="analyze-btn" onclick="analyzeTrack()">TRACK ANALYSIEREN</button>
-      <div id="tt-no-track" class="no-track-msg">KEIN TRACK VORHANDEN<br>— ERST FLUG AUFZEICHNEN —</div>
-      <div id="tt-results" style="display:none;">
+      <div id="tt-no-track" class="no-track">KEIN TRACK<br>— ERST FLIEGEN —</div>
+      <div id="tt-results" style="display:none">
         <div class="tt-legend">
-          <div class="legend-item"><div class="legend-dot" style="background:#ef5350;"></div><span class="legend-text">Steigen</span></div>
-          <div class="legend-item"><div class="legend-dot" style="background:#2196F3;"></div><span class="legend-text">Sinken</span></div>
-          <div class="legend-item"><div class="legend-dot" style="background:#555;"></div><span class="legend-text">Vorflug</span></div>
+          <div class="leg-item"><div class="leg-dot" style="background:#ef5350"></div><span class="leg-txt">Steigen</span></div>
+          <div class="leg-item"><div class="leg-dot" style="background:#38bdf8"></div><span class="leg-txt">Sinken</span></div>
+          <div class="leg-item"><div class="leg-dot" style="background:#444"></div><span class="leg-txt">Vorflug</span></div>
         </div>
-        <div class="stats-row four">
-          <div class="stat-box"><div class="stat-box-label">Flugzeit</div><div class="stat-box-val orange" id="st-duration">--</div></div>
-          <div class="stat-box"><div class="stat-box-label">Distanz</div><div class="stat-box-val" id="st-dist">--</div></div>
-          <div class="stat-box"><div class="stat-box-label">Max Höhe</div><div class="stat-box-val" id="st-maxalt">--</div></div>
-          <div class="stat-box"><div class="stat-box-label">Thermik %</div><div class="stat-box-val" id="st-thermicpct">--</div></div>
+        <div class="stats-grid four" style="margin-bottom:8px">
+          <div class="stat-box"><div class="stat-box-lbl">Flugzeit</div><div class="stat-box-val acc" id="st-dur">--</div></div>
+          <div class="stat-box"><div class="stat-box-lbl">Distanz</div><div class="stat-box-val" id="st-dist">--</div></div>
+          <div class="stat-box"><div class="stat-box-lbl">Max Höhe</div><div class="stat-box-val" id="st-alt">--</div></div>
+          <div class="stat-box"><div class="stat-box-lbl">Thermik%</div><div class="stat-box-val" id="st-thpct">--</div></div>
         </div>
-        <div class="stats-row">
-          <div class="stat-box"><div class="stat-box-label">Ø Steigen</div><div class="stat-box-val" id="st-avgclimb">--</div></div>
-          <div class="stat-box"><div class="stat-box-label">Max Steigen</div><div class="stat-box-val" id="st-maxclimb">--</div></div>
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-box-lbl">Ø Steigen</div><div class="stat-box-val" id="st-avgc">--</div></div>
+          <div class="stat-box"><div class="stat-box-lbl">Max Steigen</div><div class="stat-box-val" id="st-maxc">--</div></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ═══ STORY PANEL ═══ -->
+  <!-- ═══ STORY ═══ -->
   <div class="panel" id="panel-story">
     <div class="story-wrap">
-      <div class="story-frame-container">
-        <div id="story-canvas-wrap">
-          <div class="story-top">
-            <div class="story-subtitle">glideOS · <span id="s-date">--.--.----</span></div>
-            <div class="story-ac-name" id="s-ac">ASK 13</div>
+      <div class="story-frame" id="story-frame">
+        <div class="s-top">
+          <div class="s-subtitle">glideOS · <span id="s-date">--.--.----</span></div>
+          <div class="s-acname" id="s-ac">ASK 13</div>
+        </div>
+        <div class="s-mid">
+          <div class="s-track-wrap">
+            <canvas id="s-track-canvas"></canvas>
           </div>
-          <div class="story-mid">
-            <div class="story-track-wrap">
-              <canvas id="story-track-canvas"></canvas>
+          <div class="s-stats-grid">
+            <div class="s-stat">
+              <div class="s-stat-lbl">Distance</div>
+              <div class="s-stat-val" id="s-dist">0.0</div>
+              <div class="s-stat-unit">KM</div>
             </div>
-            <div class="story-stats-grid">
-              <div class="story-stat">
-                <div class="story-stat-label">Distance</div>
-                <div class="story-stat-val" id="s-dist">0.0</div>
-                <div class="story-stat-unit">KM</div>
-              </div>
-              <div class="story-stat">
-                <div class="story-stat-label">Duration</div>
-                <div class="story-stat-val" id="s-dur">0:00</div>
-                <div class="story-stat-unit">HH:MM:SS</div>
-              </div>
-              <div class="story-stat">
-                <div class="story-stat-label">Avg Glide</div>
-                <div class="story-stat-val" id="s-glide">1:--</div>
-                <div class="story-stat-unit">RATIO</div>
-              </div>
-              <div class="story-stat">
-                <div class="story-stat-label">Alt Gain</div>
-                <div class="story-stat-val" id="s-altgain">0</div>
-                <div class="story-stat-unit">METER</div>
-              </div>
+            <div class="s-stat">
+              <div class="s-stat-lbl">Duration</div>
+              <div class="s-stat-val" id="s-dur">0:00</div>
+              <div class="s-stat-unit">HH:MM:SS</div>
             </div>
-          </div>
-          <div class="story-bottom">
-            <div class="story-logo">glide<span>OS</span></div>
+            <div class="s-stat">
+              <div class="s-stat-lbl">Avg Glide</div>
+              <div class="s-stat-val" id="s-glide">1:--</div>
+              <div class="s-stat-unit">RATIO</div>
+            </div>
+            <div class="s-stat">
+              <div class="s-stat-lbl">Alt Gain</div>
+              <div class="s-stat-val" id="s-altgain">0</div>
+              <div class="s-stat-unit">METER</div>
+            </div>
           </div>
         </div>
+        <div class="s-bottom">
+          <div class="s-logo">glide<span>OS</span></div>
+        </div>
       </div>
-      <div class="story-action-btns">
-        <button class="story-btn secondary" onclick="refreshStory()">↻ REFRESH</button>
-        <button class="story-btn primary" onclick="exportStory()">⬇ PNG EXPORT</button>
+      <div class="story-btns">
+        <button class="s-btn sec" onclick="refreshStory()">↻ REFRESH</button>
+        <button class="s-btn primary" onclick="exportStory()">⬇ PNG</button>
       </div>
-      <div style="width:100%;max-width:360px;">
-        <button class="igc-btn" onclick="downloadIGC()">⬇ IGC DATEI HERUNTERLADEN</button>
+      <button class="igc-btn" onclick="downloadIGC()">⬇ IGC DATEI HERUNTERLADEN</button>
+    </div>
+  </div>
+</div>
+
+<!-- TIKTOK OVERLAY -->
+<div id="tiktok-overlay">
+  <div class="tiktok-inner">
+    <div class="tiktok-top">
+      <div class="tiktok-logo">glide<span>OS</span></div>
+      <div class="tiktok-rec-badge" id="tt-rec-badge" style="display:none">
+        <div class="dot"></div>REC
       </div>
+    </div>
+    <div class="tiktok-mid">
+      <div class="tiktok-sub">Groundspeed</div>
+      <div class="tiktok-big" id="tt-gs">0<span>km/h</span></div>
+      <div class="tiktok-row">
+        <div class="tiktok-stat">
+          <div class="tiktok-stat-val" id="tt-alt">---</div>
+          <div class="tiktok-stat-lbl">Höhe m</div>
+        </div>
+        <div class="tiktok-stat">
+          <div class="tiktok-stat-val" id="tt-hdg">---</div>
+          <div class="tiktok-stat-lbl">Kurs°</div>
+        </div>
+      </div>
+      <div class="tiktok-vario-row">
+        <div class="tiktok-vario-val" id="tt-vario" style="color:var(--acc)">+0.0</div>
+        <div class="tiktok-vario-lbl">m/s VARIO</div>
+      </div>
+    </div>
+    <div class="tiktok-bottom">
+      <div class="tiktok-ac" id="tt-ac-label">ASK 13</div>
+      <div class="tiktok-time" id="tt-time">00:00:00</div>
     </div>
   </div>
 </div>
@@ -414,391 +669,411 @@
 <div id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════════════════
-// AIRCRAFT DATA
-// ═══════════════════════════════════════════════════
-const AIRCRAFT = {
-  ASK13: { name: 'ASK 13', circleSpeed: 72, glide: 27, polar: [
-    {v:70,s:-0.65},{v:80,s:-0.75},{v:90,s:-0.92},{v:100,s:-1.15},{v:110,s:-1.45}
-  ]},
-  ASK21: { name: 'ASK 21B', circleSpeed: 82, glide: 34, polar: [
-    {v:80,s:-0.70},{v:90,s:-0.82},{v:100,s:-1.00},{v:110,s:-1.25},{v:120,s:-1.58}
-  ]}
+// ═══════════════════════════════════════════
+// AIRCRAFT
+// ═══════════════════════════════════════════
+const AC = {
+  ASK13: { name: 'ASK 13',  circleSpd: 72, glide: 27 },
+  ASK21: { name: 'ASK 21B', circleSpd: 82, glide: 34 }
 };
 let selectedAC = 'ASK13';
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // STATE
-// ═══════════════════════════════════════════════════
-let gpsWatchId = null;
+// ═══════════════════════════════════════════
+let track = [];
 let isRecording = false;
-let track = []; // [{lat,lon,alt,ts,gs,hdg}]
 let flightStart = null;
-let timerInterval = null;
+let gpsWatchId = null;
+let timerIv = null;
 let ttMap = null;
-let ttMapInit = false;
-let trackLayers = [];
+let ttMapReady = false;
+let ttLayers = [];
+let tiktokVisible = false;
 
-// Kalman / smoothing state
-let altBuffer = [];
-const ALT_SMOOTH_N = 5; // 5-point rolling average for vario
+// Vario smoothing: Kalman-lite (rolling 5-point alt buffer)
+const VARIO_N = 5;
+let altBuf = []; // [{alt, ts}]
 
-// ═══════════════════════════════════════════════════
-// TABS
-// ═══════════════════════════════════════════════════
-function switchTab(tab) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('panel-' + tab).classList.add('active');
-  document.getElementById('nav-' + tab).classList.add('active');
-  if (tab === 'tt' && !ttMapInit) { initTTMap(); }
-  if (tab === 'story') { refreshStory(); }
-}
-
-// ═══════════════════════════════════════════════════
-// AIRCRAFT SELECT
-// ═══════════════════════════════════════════════════
-function selectAC(ac) {
-  selectedAC = ac;
-  document.getElementById('ac-ask13').classList.toggle('active', ac === 'ASK13');
-  document.getElementById('ac-ask21').classList.toggle('active', ac === 'ASK21');
-}
-
-// ═══════════════════════════════════════════════════
-// SMOOTHED VARIO
-// ═══════════════════════════════════════════════════
-function computeVario(newAlt, ts) {
-  altBuffer.push({ alt: newAlt, ts });
-  if (altBuffer.length > ALT_SMOOTH_N) altBuffer.shift();
-  if (altBuffer.length < 2) return 0;
-  const oldest = altBuffer[0];
-  const newest = altBuffer[altBuffer.length - 1];
-  const dt = (newest.ts - oldest.ts) / 1000;
+function smoothVario(alt, ts) {
+  altBuf.push({ alt, ts });
+  if (altBuf.length > VARIO_N) altBuf.shift();
+  if (altBuf.length < 2) return 0;
+  const dt = (altBuf[altBuf.length-1].ts - altBuf[0].ts) / 1000;
   if (dt < 0.5) return 0;
-  return (newest.alt - oldest.alt) / dt;
+  return (altBuf[altBuf.length-1].alt - altBuf[0].alt) / dt;
 }
 
-function updateVarioDisplay(vms) {
-  const el = document.getElementById('disp-vario');
-  const bar = document.getElementById('vario-bar');
-  el.textContent = (vms >= 0 ? '+' : '') + vms.toFixed(1);
-  el.style.color = vms > 0.3 ? 'var(--green)' : vms < -0.3 ? 'var(--blue)' : 'var(--text)';
-  const maxMs = 4;
-  const pct = Math.min(Math.abs(vms) / maxMs, 1);
-  const barH = pct * 50;
-  if (vms > 0.1) {
-    bar.style.background = 'var(--green)';
-    bar.style.height = barH + 'px';
-    bar.style.top = (30 - barH) + 'px';
-  } else if (vms < -0.1) {
-    bar.style.background = 'var(--blue)';
-    bar.style.height = barH + 'px';
-    bar.style.top = '30px';
-  } else {
-    bar.style.height = '2px';
-    bar.style.top = '29px';
-    bar.style.background = 'var(--border)';
-  }
-}
+// ═══════════════════════════════════════════
+// GPS — iOS FIX: don't call watchPosition until after user gesture
+// ═══════════════════════════════════════════
+let gpsStarted = false;
 
-// ═══════════════════════════════════════════════════
-// GPS
-// ═══════════════════════════════════════════════════
 function startGPS() {
+  if (gpsStarted) return;
   if (!navigator.geolocation) {
-    showGPSError('GPS nicht verfügbar auf diesem Gerät.');
+    setStatus('GPS nicht verfügbar', 'err');
     return;
   }
-  const dot = document.getElementById('status-dot');
-  dot.className = 'status-dot searching';
-  document.getElementById('status-text').textContent = 'GPS SUCHE…';
-
+  gpsStarted = true;
+  setStatus('GPS Suche…', 'search');
   gpsWatchId = navigator.geolocation.watchPosition(
-    onGPS,
-    onGPSError,
-    { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
+    onGPS, onGPSErr,
+    { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
   );
 }
 
-function stopGPS() {
-  if (gpsWatchId !== null) {
-    navigator.geolocation.clearWatch(gpsWatchId);
-    gpsWatchId = null;
-  }
-}
-
 function onGPS(pos) {
-  const { latitude: lat, longitude: lon, altitude: alt, speed, heading } = pos.coords;
+  const { latitude: lat, longitude: lon, altitude, speed, heading } = pos.coords;
   const ts = pos.timestamp;
+  const alt = altitude != null ? altitude : 0;
+  const gs  = speed != null ? speed * 3.6 : 0;
+  const hdg = heading != null ? Math.round(heading) : null;
+  const vario = smoothVario(alt, ts);
 
-  const altM = alt || 0;
-  const gs = speed != null ? speed * 3.6 : 0;
-  const hdg = heading != null ? heading : null;
-  const vario = computeVario(altM, ts);
-
-  document.getElementById('disp-gs').textContent = Math.round(gs);
-  document.getElementById('disp-hdg').textContent = hdg != null ? Math.round(hdg) + '°' : '---';
-  document.getElementById('disp-alt').textContent = Math.round(altM);
+  // Update displays
+  document.getElementById('disp-gs').textContent  = Math.round(gs);
+  document.getElementById('disp-hdg').textContent = hdg != null ? hdg + '°' : '---';
+  document.getElementById('disp-alt').textContent = Math.round(alt);
   updateVarioDisplay(vario);
 
-  const dot = document.getElementById('status-dot');
-  if (!isRecording) {
-    dot.className = 'status-dot active';
-    document.getElementById('status-text').textContent = 'GPS OK — ' + lat.toFixed(4) + ', ' + lon.toFixed(4);
-  }
+  // TikTok overlay sync
+  document.getElementById('tt-gs').innerHTML   = Math.round(gs) + '<span>km/h</span>';
+  document.getElementById('tt-alt').textContent = Math.round(alt);
+  document.getElementById('tt-hdg').textContent = hdg != null ? hdg + '°' : '---';
+  document.getElementById('tt-vario').textContent = (vario >= 0 ? '+' : '') + vario.toFixed(1);
+  document.getElementById('tt-vario').style.color = vario > 0.3 ? 'var(--acc)' : vario < -0.3 ? 'var(--blue)' : 'var(--text)';
 
+  // REC dot top bar
+  document.getElementById('rec-dot').className = isRecording ? 'rec' : 'gps';
+  setStatus('GPS OK · ' + lat.toFixed(4) + ',' + lon.toFixed(4), 'on');
+
+  // Track recording — every second (1000ms gap)
   if (isRecording) {
-    const pts = track.length;
-    if (pts === 0 || ts - track[pts-1].ts >= 900) {
-      track.push({ lat, lon, alt: altM, ts, gs, hdg: hdg || 0, vario });
+    const last = track[track.length - 1];
+    if (!last || ts - last.ts >= 1000) {
+      track.push({ lat, lon, alt, ts, gs, hdg: hdg || 0, vario });
       document.getElementById('disp-pts').textContent = track.length;
       saveTrack();
     }
   }
 }
 
-function onGPSError(err) {
-  document.getElementById('status-dot').className = 'status-dot';
-  document.getElementById('status-text').textContent = 'GPS FEHLER';
-  if (err.code === err.PERMISSION_DENIED) showGPSError();
+function onGPSErr(e) {
+  if (e.code === e.PERMISSION_DENIED) {
+    document.getElementById('gps-err').classList.add('show');
+    setStatus('GPS verweigert', 'err');
+  } else if (e.code === e.TIMEOUT) {
+    setStatus('GPS Timeout — warte…', 'search');
+  } else {
+    setStatus('GPS Fehler: ' + e.message, 'err');
+  }
 }
 
-function showGPSError(msg) {
-  const el = document.getElementById('gps-error');
-  if (msg) el.innerHTML = msg;
-  el.classList.add('show');
+function setStatus(txt, type) {
+  document.getElementById('status-txt').textContent = txt;
+  const g = document.getElementById('status-glow');
+  g.className = 'status-glow' + (type ? ' ' + type : '');
 }
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// VARIO DISPLAY
+// ═══════════════════════════════════════════
+function updateVarioDisplay(v) {
+  const el = document.getElementById('disp-vario');
+  const fill = document.getElementById('vario-fill');
+  el.textContent = (v >= 0 ? '+' : '') + v.toFixed(1);
+  el.style.color = v > 0.3 ? 'var(--acc)' : v < -0.3 ? 'var(--blue)' : 'var(--text)';
+  const maxMs = 5;
+  const pct = Math.min(Math.abs(v) / maxMs, 1);
+  const barH = Math.max(2, pct * 56);
+  if (v > 0.1) {
+    fill.style.background = 'var(--acc)';
+    fill.style.height = barH + 'px';
+    fill.style.top = (28 - barH) + 'px';
+  } else if (v < -0.1) {
+    fill.style.background = 'var(--blue)';
+    fill.style.height = barH + 'px';
+    fill.style.top = '28px';
+  } else {
+    fill.style.height = '2px';
+    fill.style.top = '27px';
+    fill.style.background = 'var(--border)';
+  }
+}
+
+// ═══════════════════════════════════════════
 // RECORDING
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 function toggleRecording() {
   if (!isRecording) {
+    // First start: also kick GPS (iOS: must happen via user gesture)
+    startGPS();
     track = [];
-    altBuffer = [];
+    altBuf = [];
     flightStart = Date.now();
     isRecording = true;
-    document.getElementById('start-btn').textContent = 'STOPP';
+    document.getElementById('start-btn').textContent = '■ STOPP';
     document.getElementById('start-btn').classList.add('recording');
-    document.getElementById('status-dot').className = 'status-dot active';
-    document.getElementById('status-text').textContent = 'AUFZEICHNUNG LÄUFT';
     document.getElementById('disp-pts').textContent = '0';
-    timerInterval = setInterval(updateTimer, 1000);
-    startGPS();
+    document.getElementById('tt-rec-badge').style.display = 'flex';
+    timerIv = setInterval(updateTimer, 1000);
+    showToast('Aufzeichnung gestartet');
   } else {
     isRecording = false;
-    stopGPS();
-    clearInterval(timerInterval);
+    clearInterval(timerIv);
     document.getElementById('start-btn').textContent = 'START';
     document.getElementById('start-btn').classList.remove('recording');
-    document.getElementById('status-dot').className = 'status-dot';
-    document.getElementById('status-text').textContent = 'FLUG GESPEICHERT (' + track.length + ' PUNKTE)';
+    document.getElementById('rec-dot').className = 'status-glow on';
+    document.getElementById('tt-rec-badge').style.display = 'none';
     saveTrack();
-    showToast('Flug gespeichert — ' + track.length + ' GPS-Punkte');
+    showToast('Flug gespeichert — ' + track.length + ' Punkte');
   }
 }
 
 function updateTimer() {
   if (!flightStart) return;
-  const elapsed = Math.floor((Date.now() - flightStart) / 1000);
-  const h = Math.floor(elapsed / 3600);
-  const m = Math.floor((elapsed % 3600) / 60);
-  const s = elapsed % 60;
-  document.getElementById('disp-time').textContent =
-    String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  const s = Math.floor((Date.now() - flightStart) / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const str = pad(h) + ':' + pad(m) + ':' + pad(sec);
+  document.getElementById('disp-time').textContent = str;
+  document.getElementById('tt-time').textContent = str;
 }
+
+function pad(n) { return String(n).padStart(2, '0'); }
 
 function saveTrack() {
   try {
-    localStorage.setItem('glide_track', JSON.stringify(track));
-    localStorage.setItem('glide_ac', selectedAC);
-    localStorage.setItem('glide_flightstart', flightStart);
+    localStorage.setItem('glideos_track', JSON.stringify(track));
+    localStorage.setItem('glideos_ac', selectedAC);
+    localStorage.setItem('glideos_start', String(flightStart));
   } catch(e) {}
 }
 
 function loadTrack() {
   try {
-    const t = localStorage.getItem('glide_track');
-    const ac = localStorage.getItem('glide_ac');
-    const fs = localStorage.getItem('glide_flightstart');
+    const t = localStorage.getItem('glideos_track');
+    const a = localStorage.getItem('glideos_ac');
+    const s = localStorage.getItem('glideos_start');
     if (t) track = JSON.parse(t);
-    if (ac) selectedAC = ac;
-    if (fs) flightStart = parseInt(fs);
+    if (a) { selectedAC = a; selectAC(a, true); }
+    if (s) flightStart = parseInt(s);
   } catch(e) {}
 }
 
-// ═══════════════════════════════════════════════════
-// TT MAP
-// ═══════════════════════════════════════════════════
-function initTTMap() {
-  ttMap = L.map('tt-map', { zoomControl: true, attributionControl: false });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18
-  }).addTo(ttMap);
-  ttMapInit = true;
-  L.control.attribution({ position: 'bottomright', prefix: '' }).addTo(ttMap);
-  ttMap.getContainer().querySelector('.leaflet-bottom.leaflet-right').style.opacity = '0.3';
+// ═══════════════════════════════════════════
+// AIRCRAFT SELECT
+// ═══════════════════════════════════════════
+function selectAC(ac, silent) {
+  selectedAC = ac;
+  document.getElementById('ac-ask13').classList.toggle('active', ac === 'ASK13');
+  document.getElementById('ac-ask21').classList.toggle('active', ac === 'ASK21');
+  document.getElementById('tt-ac-label').textContent = AC[ac].name;
+  if (!silent) showToast(AC[ac].name + ' ausgewählt');
 }
 
-function haversine(lat1, lon1, lat2, lon2) {
-  const R = 6371000;
-  const dLat = (lat2-lat1)*Math.PI/180;
-  const dLon = (lon2-lon1)*Math.PI/180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+// ═══════════════════════════════════════════
+// TIKTOK OVERLAY
+// ═══════════════════════════════════════════
+function toggleTikTok() {
+  tiktokVisible = !tiktokVisible;
+  document.getElementById('tiktok-overlay').classList.toggle('show', tiktokVisible);
+  document.getElementById('tiktok-btn').classList.toggle('active', tiktokVisible);
+  // Start GPS on first toggle too
+  if (tiktokVisible) startGPS();
+}
+
+// ═══════════════════════════════════════════
+// MOTION SENSORS (iOS 13+ requires permission)
+// ═══════════════════════════════════════════
+let motionActive = false;
+
+function checkMotionPermission() {
+  // Show the button if DeviceMotionEvent exists but might need permission
+  if (typeof DeviceMotionEvent !== 'undefined') {
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      // iOS 13+ — needs explicit permission
+      document.getElementById('motion-perm-btn').classList.add('show');
+    } else {
+      // Android/Desktop — just start
+      startMotion();
+    }
+  }
+}
+
+function requestMotion() {
+  if (typeof DeviceMotionEvent.requestPermission === 'function') {
+    DeviceMotionEvent.requestPermission().then(state => {
+      if (state === 'granted') {
+        startMotion();
+        document.getElementById('motion-perm-btn').classList.remove('show');
+        showToast('Motion-Sensor aktiv!');
+      } else {
+        showToast('Motion verweigert');
+      }
+    }).catch(() => showToast('Motion Fehler'));
+  } else {
+    startMotion();
+  }
+}
+
+function startMotion() {
+  if (motionActive) return;
+  motionActive = true;
+  document.getElementById('motion-card').style.display = 'block';
+
+  window.addEventListener('devicemotion', (e) => {
+    const a = e.accelerationIncludingGravity;
+    if (!a) return;
+    document.getElementById('m-ax').textContent = (a.x || 0).toFixed(1);
+    document.getElementById('m-ay').textContent = (a.y || 0).toFixed(1);
+    document.getElementById('m-az').textContent = (a.z || 0).toFixed(1);
+  });
+
+  window.addEventListener('deviceorientation', (e) => {
+    // beta = front-back tilt (pitch), gamma = left-right (roll)
+    if (e.beta != null) {
+      document.getElementById('m-pitch').textContent = (e.beta || 0).toFixed(1);
+      document.getElementById('m-roll').textContent  = (e.gamma || 0).toFixed(1);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  document.getElementById('nav-' + tab).classList.add('active');
+  if (tab === 'tt' && !ttMapReady) initTTMap();
+  if (tab === 'story') refreshStory();
+  // Nudge GPS on first real interaction
+  startGPS();
+}
+
+// ═══════════════════════════════════════════
+// TT MAP
+// ═══════════════════════════════════════════
+function initTTMap() {
+  ttMap = L.map('tt-map', { zoomControl: false, attributionControl: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(ttMap);
+  L.control.zoom({ position: 'topright' }).addTo(ttMap);
+  ttMapReady = true;
+}
+
+function haversine(la1, lo1, la2, lo2) {
+  const R = 6371000, r = Math.PI/180;
+  const dLa = (la2-la1)*r, dLo = (lo2-lo1)*r;
+  const a = Math.sin(dLa/2)**2 + Math.cos(la1*r)*Math.cos(la2*r)*Math.sin(dLo/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-function headingDiff(h1, h2) {
-  let d = Math.abs(h1 - h2) % 360;
-  if (d > 180) d = 360 - d;
-  return d;
+function hdgDiff(h1, h2) {
+  let d = Math.abs(h1-h2) % 360;
+  return d > 180 ? 360-d : d;
 }
 
 function analyzeTrack() {
   loadTrack();
-  if (!track || track.length < 5) {
-    showToast('Kein Track — erst fliegen!');
-    return;
-  }
+  if (!track || track.length < 5) { showToast('Kein Track — erst fliegen!'); return; }
 
-  const ac = AIRCRAFT[selectedAC];
-  document.getElementById('tt-results').style.display = 'block';
+  ttLayers.forEach(l => ttMap.removeLayer(l));
+  ttLayers = [];
   document.getElementById('tt-no-track').style.display = 'none';
+  document.getElementById('tt-results').style.display = 'block';
 
-  // Clear existing layers
-  trackLayers.forEach(l => ttMap.removeLayer(l));
-  trackLayers = [];
-
-  // Segment detection: thermic circle = heading changes > 180° in 15s window
-  const CIRCLE_WINDOW_S = 15;
-  const CIRCLE_THRESHOLD = 180;
-  const segments = [];
+  const WINDOW_S = 15, CIRCLE_DEG = 180;
+  const segs = [];
   let i = 0;
 
-  while (i < track.length) {
-    // look ahead 15s
-    let j = i + 1;
-    let totalHdgChange = 0;
-    while (j < track.length && (track[j].ts - track[i].ts) / 1000 <= CIRCLE_WINDOW_S) {
-      totalHdgChange += headingDiff(track[j-1].hdg, track[j].hdg);
+  while (i < track.length - 1) {
+    let j = i + 1, hdgAcc = 0;
+    while (j < track.length && (track[j].ts - track[i].ts)/1000 <= WINDOW_S) {
+      hdgAcc += hdgDiff(track[j-1].hdg, track[j].hdg);
       j++;
     }
-    const isThermic = totalHdgChange >= CIRCLE_THRESHOLD;
-
-    // find end of this phase
-    let k = j;
+    const isThermic = hdgAcc >= CIRCLE_DEG;
+    // extend seg while type matches
+    let k = Math.min(j, track.length);
     while (k < track.length) {
-      let hdgChk = 0;
-      let l2 = k;
-      while (l2 < track.length && (track[l2].ts - track[k].ts) / 1000 <= CIRCLE_WINDOW_S) {
-        hdgChk += headingDiff(track[l2-1 < k ? k : l2-1].hdg, track[l2].hdg);
-        l2++;
+      let ha = 0, l = k+1;
+      while (l < track.length && (track[l].ts - track[k].ts)/1000 <= WINDOW_S) {
+        ha += hdgDiff(track[l-1].hdg, track[l].hdg); l++;
       }
-      const nextThermic = hdgChk >= CIRCLE_THRESHOLD;
-      if (nextThermic !== isThermic) break;
+      if ((ha >= CIRCLE_DEG) !== isThermic) break;
       k++;
     }
-
-    // avg vario in segment
-    const segPts = track.slice(i, k);
-    const avgVario = segPts.reduce((s, p) => s + (p.vario || 0), 0) / (segPts.length || 1);
-
-    segments.push({ start: i, end: k, thermic: isThermic, avgVario, pts: segPts });
-    i = k - 1;
-    if (i <= 0) i = 1;
+    if (k >= track.length) k = track.length;
+    const pts = track.slice(i, k);
+    const avgV = pts.reduce((s,p) => s + (p.vario||0), 0) / (pts.length||1);
+    segs.push({ pts, thermic: isThermic, avgV });
+    i = Math.max(i+1, k-1);
     if (k >= track.length) break;
   }
 
-  // draw
-  let totalDist = 0;
-  let maxAlt = -Infinity;
-  let thermicTime = 0;
-  let totalTime = 0;
-  let climbRates = [];
-  let altGain = 0;
-  let glideDistances = [];
-  let glideLosses = [];
-
+  let totalDist=0, maxAlt=-Infinity, thermTime=0, totalTime=0;
+  let climbRates=[], altGain=0;
   const bounds = [];
 
-  segments.forEach(seg => {
+  segs.forEach(seg => {
     if (seg.pts.length < 2) return;
-    const latlngs = seg.pts.map(p => [p.lat, p.lon]);
-    bounds.push(...latlngs);
+    const ll = seg.pts.map(p => [p.lat, p.lon]);
+    bounds.push(...ll);
+    let col, wt;
+    if (seg.thermic) { col = seg.avgV > 0 ? '#ef5350' : '#38bdf8'; wt = 4; }
+    else { col = '#444'; wt = 2; }
+    const pl = L.polyline(ll, { color: col, weight: wt, opacity: 0.92 }).addTo(ttMap);
+    ttLayers.push(pl);
 
-    let color, weight;
-    if (seg.thermic) {
-      color = seg.avgVario > 0 ? '#ef5350' : '#2196F3';
-      weight = 4;
-    } else {
-      color = '#555';
-      weight = 2;
-    }
-
-    const pl = L.polyline(latlngs, { color, weight, opacity: 0.9 }).addTo(ttMap);
-    trackLayers.push(pl);
-
-    // calc stats per segment
-    for (let x = 1; x < seg.pts.length; x++) {
-      const d = haversine(seg.pts[x-1].lat, seg.pts[x-1].lon, seg.pts[x].lat, seg.pts[x].lon);
-      totalDist += d;
+    for (let x=1; x<seg.pts.length; x++) {
+      totalDist += haversine(seg.pts[x-1].lat,seg.pts[x-1].lon,seg.pts[x].lat,seg.pts[x].lon);
       maxAlt = Math.max(maxAlt, seg.pts[x].alt);
     }
-
     const segDur = (seg.pts[seg.pts.length-1].ts - seg.pts[0].ts) / 1000;
     totalTime += segDur;
     if (seg.thermic) {
-      thermicTime += segDur;
+      thermTime += segDur;
       const rise = seg.pts[seg.pts.length-1].alt - seg.pts[0].alt;
-      if (rise > 0) { altGain += rise; climbRates.push(seg.avgVario); }
-    } else {
-      const hDist = haversine(seg.pts[0].lat, seg.pts[0].lon, seg.pts[seg.pts.length-1].lat, seg.pts[seg.pts.length-1].lon);
-      const altLoss = seg.pts[0].alt - seg.pts[seg.pts.length-1].alt;
-      if (altLoss > 0 && hDist > 0) {
-        glideDistances.push(hDist);
-        glideLosses.push(altLoss);
-      }
+      if (rise > 0) { altGain += rise; climbRates.push(seg.avgV); }
     }
   });
 
-  // start/end markers
   if (track.length > 0) {
-    const startM = L.circleMarker([track[0].lat, track[0].lon], { radius: 6, color: '#4caf50', fillColor: '#4caf50', fillOpacity: 1 }).addTo(ttMap);
-    const endM = L.circleMarker([track[track.length-1].lat, track[track.length-1].lon], { radius: 6, color: '#22c55e', fillColor: '#22c55e', fillOpacity: 1 }).addTo(ttMap);
-    trackLayers.push(startM, endM);
+    const sm = L.circleMarker([track[0].lat,track[0].lon],{radius:5,color:'#22c55e',fillColor:'#22c55e',fillOpacity:1}).addTo(ttMap);
+    const em = L.circleMarker([track[track.length-1].lat,track[track.length-1].lon],{radius:5,color:'#ef5350',fillColor:'#ef5350',fillOpacity:1}).addTo(ttMap);
+    ttLayers.push(sm, em);
   }
-
   if (bounds.length > 0) ttMap.fitBounds(bounds, { padding: [30,30] });
 
-  // fill stats
-  const durStr = fmtDuration(totalTime);
-  const distKm = (totalDist / 1000).toFixed(1);
-  const thermicPct = totalTime > 0 ? Math.round(thermicTime / totalTime * 100) : 0;
-  const avgClimb = climbRates.length > 0 ? (climbRates.reduce((a,b) => a+b) / climbRates.length).toFixed(1) : '—';
-  const maxClimb = climbRates.length > 0 ? Math.max(...climbRates).toFixed(1) : '—';
+  const thermPct = totalTime > 0 ? Math.round(thermTime/totalTime*100) : 0;
+  const avgC = climbRates.length > 0 ? (climbRates.reduce((a,b)=>a+b)/climbRates.length).toFixed(1) : '—';
+  const maxC = climbRates.length > 0 ? Math.max(...climbRates).toFixed(1) : '—';
 
-  document.getElementById('st-duration').textContent = durStr;
-  document.getElementById('st-dist').textContent = distKm + ' km';
-  document.getElementById('st-maxalt').textContent = maxAlt > -Infinity ? Math.round(maxAlt) + 'm' : '—';
-  document.getElementById('st-thermicpct').textContent = thermicPct + '%';
-  document.getElementById('st-avgclimb').textContent = avgClimb + ' m/s';
-  document.getElementById('st-maxclimb').textContent = maxClimb + ' m/s';
+  document.getElementById('st-dur').textContent   = fmtDur(totalTime);
+  document.getElementById('st-dist').textContent  = (totalDist/1000).toFixed(1)+'km';
+  document.getElementById('st-alt').textContent   = maxAlt > -Infinity ? Math.round(maxAlt)+'m' : '—';
+  document.getElementById('st-thpct').textContent = thermPct+'%';
+  document.getElementById('st-avgc').textContent  = avgC+' m/s';
+  document.getElementById('st-maxc').textContent  = maxC+' m/s';
 
-  showToast('Analyse fertig — ' + segments.length + ' Segmente');
+  showToast('Analyse fertig');
 }
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // STORY
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 function refreshStory() {
   loadTrack();
-
-  const ac = AIRCRAFT[selectedAC] || AIRCRAFT.ASK13;
+  const ac = AC[selectedAC] || AC.ASK13;
   document.getElementById('s-ac').textContent = ac.name;
 
   if (!track || track.length < 2) {
     document.getElementById('s-dist').textContent = '0.0';
-    document.getElementById('s-dur').textContent = '0:00';
+    document.getElementById('s-dur').textContent  = '0:00';
     document.getElementById('s-glide').textContent = '1:' + ac.glide;
     document.getElementById('s-altgain').textContent = '0';
     document.getElementById('s-date').textContent = '--.--.----';
@@ -806,244 +1081,153 @@ function refreshStory() {
     return;
   }
 
-  // date from first point
   const d = new Date(track[0].ts);
   document.getElementById('s-date').textContent =
-    String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + d.getFullYear();
+    pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear();
 
-  // distance
-  let totalDist = 0;
-  for (let i = 1; i < track.length; i++) {
-    totalDist += haversine(track[i-1].lat, track[i-1].lon, track[i].lat, track[i].lon);
+  let dist=0, altGain=0, glideDist=0, glideDrop=0;
+  for (let i=1; i<track.length; i++) {
+    const da = track[i].alt - track[i-1].alt;
+    const dd = haversine(track[i-1].lat,track[i-1].lon,track[i].lat,track[i].lon);
+    dist += dd;
+    if (da > 0) altGain += da;
+    if (da < 0 && dd > 0) { glideDist += dd; glideDrop += Math.abs(da); }
   }
 
-  // duration
-  const dur = (track[track.length-1].ts - track[0].ts) / 1000;
+  const durS = (track[track.length-1].ts - track[0].ts) / 1000;
+  const glide = glideDrop > 0 ? Math.round(glideDist/glideDrop) : ac.glide;
 
-  // alt gain & glide ratio from gliding phases
-  let altGain = 0;
-  let glideDist = 0;
-  let glideDrop = 0;
-
-  for (let i = 1; i < track.length; i++) {
-    const dA = track[i].alt - track[i-1].alt;
-    const dD = haversine(track[i-1].lat, track[i-1].lon, track[i].lat, track[i].lon);
-    if (dA > 0) altGain += dA;
-    if (dA < 0 && dD > 0) {
-      glideDist += dD;
-      glideDrop += Math.abs(dA);
-    }
-  }
-
-  const glideRatio = glideDrop > 0 ? Math.round(glideDist / glideDrop) : ac.glide;
-
-  document.getElementById('s-dist').textContent = (totalDist / 1000).toFixed(1);
-  document.getElementById('s-dur').textContent = fmtDuration(dur);
-  document.getElementById('s-glide').textContent = '1:' + glideRatio;
+  document.getElementById('s-dist').textContent   = (dist/1000).toFixed(1);
+  document.getElementById('s-dur').textContent    = fmtDur(durS);
+  document.getElementById('s-glide').textContent  = '1:' + glide;
   document.getElementById('s-altgain').textContent = Math.round(altGain);
 
   drawStoryTrack(track);
 }
 
 function drawStoryTrack(pts) {
-  const canvas = document.getElementById('story-track-canvas');
+  const canvas = document.getElementById('s-track-canvas');
   const wrap = canvas.parentElement;
-  canvas.width = wrap.offsetWidth * 2;
-  canvas.height = wrap.offsetHeight * 2;
-  canvas.style.width = '100%';
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  canvas.width  = wrap.offsetWidth  * dpr;
+  canvas.height = wrap.offsetHeight * dpr;
+  canvas.style.width  = '100%';
   canvas.style.height = '100%';
   const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, wrap.offsetWidth, wrap.offsetHeight);
 
   if (!pts || pts.length < 2) {
-    ctx.strokeStyle = 'rgba(255,87,34,0.2)';
-    ctx.lineWidth = 3;
-    ctx.setLineDash([8, 8]);
+    ctx.strokeStyle = 'rgba(34,197,94,0.15)';
+    ctx.lineWidth = 2; ctx.setLineDash([6,6]);
     ctx.beginPath();
-    ctx.moveTo(canvas.width * 0.1, canvas.height * 0.5);
-    ctx.lineTo(canvas.width * 0.9, canvas.height * 0.5);
+    ctx.moveTo(wrap.offsetWidth*0.1, wrap.offsetHeight*0.5);
+    ctx.lineTo(wrap.offsetWidth*0.9, wrap.offsetHeight*0.5);
     ctx.stroke();
     return;
   }
 
-  const lats = pts.map(p => p.lat);
-  const lons = pts.map(p => p.lon);
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
-  const pad = 40;
+  const lats = pts.map(p=>p.lat), lons = pts.map(p=>p.lon);
+  const minLa=Math.min(...lats), maxLa=Math.max(...lats);
+  const minLo=Math.min(...lons), maxLo=Math.max(...lons);
+  const pad = 20;
+  const W = wrap.offsetWidth - pad*2, H = wrap.offsetHeight - pad*2;
+  const laR = maxLa-minLa || 0.001, loR = maxLo-minLo || 0.001;
+  const scale = Math.min(W/loR, H/laR);
+  const ox = (W - loR*scale)/2, oy = (H - laR*scale)/2;
+  const tx = lo => pad + ox + (lo-minLo)*scale;
+  const ty = la => pad + oy + (maxLa-la)*scale;
 
-  const w = canvas.width - pad*2, h = canvas.height - pad*2;
-  const latRange = maxLat - minLat || 0.001;
-  const lonRange = maxLon - minLon || 0.001;
-  const scale = Math.min(w / lonRange, h / latRange);
-  const offX = (w - lonRange * scale) / 2;
-  const offY = (h - latRange * scale) / 2;
-
-  const toX = lon => pad + offX + (lon - minLon) * scale;
-  const toY = lat => pad + offY + (maxLat - lat) * scale;
-
-  // glow
-  ctx.shadowColor = '#22c55e';
-  ctx.shadowBlur = 18;
-  ctx.strokeStyle = '#22c55e';
-  ctx.lineWidth = 4;
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-  ctx.setLineDash([]);
-
+  ctx.shadowColor = '#22c55e'; ctx.shadowBlur = 14;
+  ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 3;
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.setLineDash([]);
   ctx.beginPath();
-  ctx.moveTo(toX(pts[0].lon), toY(pts[0].lat));
-  for (let i = 1; i < pts.length; i++) {
-    ctx.lineTo(toX(pts[i].lon), toY(pts[i].lat));
-  }
+  ctx.moveTo(tx(pts[0].lon), ty(pts[0].lat));
+  for (let i=1; i<pts.length; i++) ctx.lineTo(tx(pts[i].lon), ty(pts[i].lat));
   ctx.stroke();
 
-  // Start dot
   ctx.shadowBlur = 0;
-  ctx.fillStyle = '#4caf50';
-  ctx.beginPath();
-  ctx.arc(toX(pts[0].lon), toY(pts[0].lat), 8, 0, Math.PI*2);
-  ctx.fill();
-
-  // End dot
   ctx.fillStyle = '#22c55e';
-  ctx.beginPath();
-  ctx.arc(toX(pts[pts.length-1].lon), toY(pts[pts.length-1].lat), 8, 0, Math.PI*2);
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(tx(pts[0].lon), ty(pts[0].lat), 5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#ef5350';
+  ctx.beginPath(); ctx.arc(tx(pts[pts.length-1].lon), ty(pts[pts.length-1].lat), 5, 0, Math.PI*2); ctx.fill();
 }
 
 function exportStory() {
-  const el = document.getElementById('story-canvas-wrap');
-  html2canvas(el, {
-    backgroundColor: '#0d0d0d',
-    scale: 2,
-    useCORS: true,
-    allowTaint: true,
-    logging: false
-  }).then(canvas => {
-    const link = document.createElement('a');
-    link.download = 'glide-story-' + Date.now() + '.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    showToast('Story als PNG gespeichert!');
-  }).catch(() => {
-    showToast('Export fehlgeschlagen');
-  });
+  const el = document.getElementById('story-frame');
+  html2canvas(el, { backgroundColor: '#0d0d0d', scale: 3, useCORS: true, logging: false })
+    .then(c => {
+      const a = document.createElement('a');
+      a.download = 'glideos-story-' + Date.now() + '.png';
+      a.href = c.toDataURL('image/png');
+      a.click();
+      showToast('PNG gespeichert!');
+    }).catch(() => showToast('Export fehlgeschlagen'));
 }
 
-// ═══════════════════════════════════════════════════
-// IGC EXPORT
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// IGC
+// ═══════════════════════════════════════════
 function downloadIGC() {
   loadTrack();
-  if (!track || track.length < 2) {
-    showToast('Kein Track zum Exportieren');
-    return;
-  }
-
-  const ac = AIRCRAFT[selectedAC];
-  const lines = [];
-  lines.push('AXXX glideOS');
-  lines.push('HFDTE' + fmtIGCDate(new Date(track[0].ts)));
-  lines.push('HFPLTPILOT: Pilot');
-  lines.push('HFGTYGLIDERTYPE: ' + ac.name);
-  lines.push('HFRFWFIRMWAREVERSION: 1.0');
-  lines.push('B RECORD START');
-
+  if (!track || track.length < 2) { showToast('Kein Track!'); return; }
+  const ac = AC[selectedAC];
+  const lines = [
+    'AXXX glideOS',
+    'HFDTE' + igcDate(new Date(track[0].ts)),
+    'HFPLTPILOT:',
+    'HFGTYGLIDERTYPE:' + ac.name,
+    'HFRFWFIRMWAREVERSION:1.0',
+    'I013638FXA'
+  ];
   track.forEach(pt => {
     const d = new Date(pt.ts);
-    const hh = String(d.getUTCHours()).padStart(2,'0');
-    const mm = String(d.getUTCMinutes()).padStart(2,'0');
-    const ss = String(d.getUTCSeconds()).padStart(2,'0');
-    const time = hh + mm + ss;
-
-    const latD = Math.abs(pt.lat);
-    const latDeg = Math.floor(latD);
-    const latMin = ((latD - latDeg) * 60000).toFixed(0).padStart(5,'0');
-    const latHem = pt.lat >= 0 ? 'N' : 'S';
-
-    const lonD = Math.abs(pt.lon);
-    const lonDeg = Math.floor(lonD);
-    const lonMin = ((lonD - lonDeg) * 60000).toFixed(0).padStart(5,'0');
-    const lonHem = pt.lon >= 0 ? 'E' : 'W';
-
-    const alt = Math.max(0, Math.round(pt.alt));
-    const altStr = String(alt).padStart(5,'0');
-
-    lines.push(`B${time}${String(latDeg).padStart(2,'0')}${latMin}${latHem}${String(lonDeg).padStart(3,'0')}${lonMin}${lonHem}A${altStr}${altStr}`);
+    const t = pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds());
+    const laD = Math.floor(Math.abs(pt.lat));
+    const laM = String(Math.round((Math.abs(pt.lat)-laD)*60000)).padStart(5,'0');
+    const laH = pt.lat >= 0 ? 'N' : 'S';
+    const loD = Math.floor(Math.abs(pt.lon));
+    const loM = String(Math.round((Math.abs(pt.lon)-loD)*60000)).padStart(5,'0');
+    const loH = pt.lon >= 0 ? 'E' : 'W';
+    const a   = String(Math.max(0,Math.round(pt.alt))).padStart(5,'0');
+    lines.push(`B${t}${String(laD).padStart(2,'0')}${laM}${laH}${String(loD).padStart(3,'0')}${loM}${loH}A${a}${a}000`);
   });
-
   lines.push('LglideOS EXPORT');
-
-  const blob = new Blob([lines.join('\r\n')], { type: 'text/plain' });
+  const blob = new Blob([lines.join('\r\n')], {type:'text/plain'});
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'glide_' + fmtIGCDate(new Date(track[0].ts)) + '.igc';
-  link.click();
-  URL.revokeObjectURL(url);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'glideos_' + igcDate(new Date(track[0].ts)) + '.igc';
+  a.click(); URL.revokeObjectURL(url);
   showToast('IGC exportiert!');
 }
 
-function fmtIGCDate(d) {
-  return String(d.getDate()).padStart(2,'0') +
-    String(d.getMonth()+1).padStart(2,'0') +
-    String(d.getFullYear()).slice(2);
+function igcDate(d) {
+  return pad(d.getDate()) + pad(d.getMonth()+1) + String(d.getFullYear()).slice(2);
 }
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // UTILS
-// ═══════════════════════════════════════════════════
-function fmtDuration(sec) {
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const s = Math.floor(sec % 60);
-  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  return `${m}:${String(s).padStart(2,'0')}`;
+// ═══════════════════════════════════════════
+function fmtDur(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = Math.floor(s%60);
+  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
 }
 
-let toastTimeout = null;
+let toastTm = null;
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  if (toastTimeout) clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => t.classList.remove('show'), 2500);
+  t.textContent = msg; t.classList.add('show');
+  if (toastTm) clearTimeout(toastTm);
+  toastTm = setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-// ═══════════════════════════════════════════════════
-// PWA SERVICE WORKER (inline)
-// ═══════════════════════════════════════════════════
-if ('serviceWorker' in navigator) {
-  const swContent = `
-self.addEventListener('install', e => self.skipWaiting());
-self.addEventListener('activate', e => clients.claim());
-self.addEventListener('fetch', e => {
-  e.respondWith(fetch(e.request).catch(() => new Response('Offline')));
-});
-`;
-  const blob = new Blob([swContent], { type: 'application/javascript' });
-  const swUrl = URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swUrl).catch(() => {});
-}
-
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // INIT
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 loadTrack();
-startGPS();
-
-// auto-update display time if flight was in progress
-if (isRecording && flightStart) {
-  timerInterval = setInterval(updateTimer, 1000);
-}
-
-// resize story canvas on show
-window.addEventListener('resize', () => {
-  if (document.getElementById('panel-story').classList.contains('active')) {
-    refreshStory();
-  }
-});
+checkMotionPermission();
+// Don't call startGPS on load — iOS blocks it without user gesture.
+// It fires on first button press (Start / TikTok / tab switch).
 </script>
 </body>
 </html>
