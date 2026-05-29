@@ -320,7 +320,6 @@ body {
 .tiktok-row {
   display: flex; gap: 20px; align-items: baseline;
 }
-.tiktok-stat { }
 .tiktok-stat-val {
   font-family: 'Bebas Neue', sans-serif; font-size: 36px;
   color: #fff; line-height: 1;
@@ -351,7 +350,6 @@ body {
 }
 
 /* ── TT PANEL ── */
-#panel-tt { }
 #tt-map { flex: 1; min-height: 0; }
 .tt-bottom {
   background: var(--bg2); border-top: 1px solid var(--border);
@@ -518,7 +516,7 @@ body {
         <div class="metric-value" id="disp-pts">0</div>
         <div class="metric-unit">GPS punkte</div>
       </div>
-      <div class="metric-card full" id="motion-card" style="display:none">
+      <div class="metric-card full" id="motion-card">
         <div class="metric-label">IMU · Beschleunigung (g)</div>
         <div class="motion-grid">
           <div class="motion-item">
@@ -624,6 +622,7 @@ body {
         </div>
       </div>
       <div class="story-btns">
+        <button class="s-btn sec" onclick="toggleStoryMap()" id="story-map-btn">MAP AUS</button>
         <button class="s-btn sec" onclick="refreshStory()">↻ REFRESH</button>
         <button class="s-btn primary" onclick="exportStory()">⬇ PNG</button>
       </div>
@@ -690,24 +689,45 @@ let ttMap = null;
 let ttMapReady = false;
 let ttLayers = [];
 let tiktokVisible = false;
+let storyMapMode = false;
+let lastSaveTs = 0;
+let lastFixForHeading = null;
 
 // Vario smoothing: Kalman-lite (rolling 5-point alt buffer)
 const VARIO_N = 5;
 let altBuf = []; // [{alt, ts}]
 
 function smoothVario(alt, ts) {
+  if (alt == null || !Number.isFinite(alt)) return null;
   altBuf.push({ alt, ts });
   if (altBuf.length > VARIO_N) altBuf.shift();
-  if (altBuf.length < 2) return 0;
+  if (altBuf.length < 2) return null;
   const dt = (altBuf[altBuf.length-1].ts - altBuf[0].ts) / 1000;
-  if (dt < 0.5) return 0;
+  if (dt < 0.5) return null;
   return (altBuf[altBuf.length-1].alt - altBuf[0].alt) / dt;
 }
 
 // ═══════════════════════════════════════════
-// GPS — iOS FIX: don't call watchPosition until after user gesture
+// GPS — fixed: direkt probieren + sicher nochmal beim ersten tap
 // ═══════════════════════════════════════════
 let gpsStarted = false;
+let gpsPrimed = false;
+
+function primeGPSOnce() {
+  if (gpsPrimed) return;
+  gpsPrimed = true;
+
+  const kick = () => {
+    startGPS();
+    window.removeEventListener('pointerdown', kick);
+    window.removeEventListener('touchstart', kick);
+    window.removeEventListener('click', kick);
+  };
+
+  window.addEventListener('pointerdown', kick, { once: true });
+  window.addEventListener('touchstart', kick, { once: true });
+  window.addEventListener('click', kick, { once: true });
+}
 
 function startGPS() {
   if (gpsStarted) return;
@@ -715,34 +735,62 @@ function startGPS() {
     setStatus('GPS nicht verfügbar', 'err');
     return;
   }
+
   gpsStarted = true;
-  setStatus('GPS Suche…', 'search');
+  document.getElementById('gps-err').classList.remove('show');
+  setStatus('GPS Anfrage…', 'search');
+
   gpsWatchId = navigator.geolocation.watchPosition(
-    onGPS, onGPSErr,
+    onGPS,
+    onGPSErr,
     { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
   );
+}
+
+function retryGPS() {
+  if (gpsWatchId != null && navigator.geolocation) {
+    try { navigator.geolocation.clearWatch(gpsWatchId); } catch(e) {}
+  }
+  gpsWatchId = null;
+  gpsStarted = false;
+  startGPS();
+}
+
+function bearingDeg(la1, lo1, la2, lo2) {
+  const r = Math.PI / 180;
+  const y = Math.sin((lo2-lo1)*r) * Math.cos(la2*r);
+  const x = Math.cos(la1*r)*Math.sin(la2*r) - Math.sin(la1*r)*Math.cos(la2*r)*Math.cos((lo2-lo1)*r);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
 }
 
 function onGPS(pos) {
   const { latitude: lat, longitude: lon, altitude, speed, heading } = pos.coords;
   const ts = pos.timestamp;
-  const alt = altitude != null ? altitude : 0;
-  const gs  = speed != null ? speed * 3.6 : 0;
-  const hdg = heading != null ? Math.round(heading) : null;
+  const alt = altitude != null && Number.isFinite(altitude) ? altitude : null;
+  const gs  = speed != null && Number.isFinite(speed) ? speed * 3.6 : 0;
+  let hdg = heading != null && Number.isFinite(heading) ? Math.round(heading) : null;
+
+  // fallback: wenn browser keinen kurs liefert, aus letzter bewegung berechnen
+  if (hdg == null && lastFixForHeading) {
+    const d = haversine(lastFixForHeading.lat, lastFixForHeading.lon, lat, lon);
+    if (d >= 3) hdg = Math.round(bearingDeg(lastFixForHeading.lat, lastFixForHeading.lon, lat, lon));
+  }
+  lastFixForHeading = { lat, lon, ts };
+
   const vario = smoothVario(alt, ts);
 
   // Update displays
   document.getElementById('disp-gs').textContent  = Math.round(gs);
   document.getElementById('disp-hdg').textContent = hdg != null ? hdg + '°' : '---';
-  document.getElementById('disp-alt').textContent = Math.round(alt);
+  document.getElementById('disp-alt').textContent = alt != null ? Math.round(alt) : '---';
   updateVarioDisplay(vario);
 
   // TikTok overlay sync
   document.getElementById('tt-gs').innerHTML   = Math.round(gs) + '<span>km/h</span>';
-  document.getElementById('tt-alt').textContent = Math.round(alt);
+  document.getElementById('tt-alt').textContent = alt != null ? Math.round(alt) : '---';
   document.getElementById('tt-hdg').textContent = hdg != null ? hdg + '°' : '---';
-  document.getElementById('tt-vario').textContent = (vario >= 0 ? '+' : '') + vario.toFixed(1);
-  document.getElementById('tt-vario').style.color = vario > 0.3 ? 'var(--acc)' : vario < -0.3 ? 'var(--blue)' : 'var(--text)';
+  document.getElementById('tt-vario').textContent = vario != null ? ((vario >= 0 ? '+' : '') + vario.toFixed(1)) : '---';
+  document.getElementById('tt-vario').style.color = vario != null && vario > 0.3 ? 'var(--acc)' : vario != null && vario < -0.3 ? 'var(--blue)' : 'var(--text)';
 
   // REC dot top bar
   document.getElementById('rec-dot').className = isRecording ? 'rec' : 'gps';
@@ -752,20 +800,24 @@ function onGPS(pos) {
   if (isRecording) {
     const last = track[track.length - 1];
     if (!last || ts - last.ts >= 1000) {
-      track.push({ lat, lon, alt, ts, gs, hdg: hdg || 0, vario });
+      track.push({ lat, lon, alt, ts, gs, hdg, vario });
       document.getElementById('disp-pts').textContent = track.length;
-      saveTrack();
+      saveTrack(false);
     }
   }
 }
 
 function onGPSErr(e) {
   if (e.code === e.PERMISSION_DENIED) {
+    gpsStarted = false;
     document.getElementById('gps-err').classList.add('show');
-    setStatus('GPS verweigert', 'err');
+    setStatus('GPS verweigert — bitte erlauben / app neu öffnen', 'err');
   } else if (e.code === e.TIMEOUT) {
-    setStatus('GPS Timeout — warte…', 'search');
+    gpsStarted = false;
+    setStatus('GPS Timeout — tippen zum neu versuchen', 'search');
+    primeGPSOnce();
   } else {
+    gpsStarted = false;
     setStatus('GPS Fehler: ' + e.message, 'err');
   }
 }
@@ -782,6 +834,14 @@ function setStatus(txt, type) {
 function updateVarioDisplay(v) {
   const el = document.getElementById('disp-vario');
   const fill = document.getElementById('vario-fill');
+  if (v == null || !Number.isFinite(v)) {
+    el.textContent = '---';
+    el.style.color = 'var(--text)';
+    fill.style.height = '2px';
+    fill.style.top = '27px';
+    fill.style.background = 'var(--border)';
+    return;
+  }
   el.textContent = (v >= 0 ? '+' : '') + v.toFixed(1);
   el.style.color = v > 0.3 ? 'var(--acc)' : v < -0.3 ? 'var(--blue)' : 'var(--text)';
   const maxMs = 5;
@@ -805,12 +865,21 @@ function updateVarioDisplay(v) {
 // ═══════════════════════════════════════════
 // RECORDING
 // ═══════════════════════════════════════════
+function archivePreviousTrack() {
+  if (!track || track.length < 2) return;
+  try {
+    const key = 'glideos_track_archive_' + new Date(track[0].ts || Date.now()).toISOString().replace(/[:.]/g, '-');
+    localStorage.setItem(key, JSON.stringify({ ac: selectedAC, start: flightStart, track }));
+  } catch(e) {}
+}
+
 function toggleRecording() {
   if (!isRecording) {
-    // First start: also kick GPS (iOS: must happen via user gesture)
     startGPS();
+    archivePreviousTrack();
     track = [];
     altBuf = [];
+    lastSaveTs = 0;
     flightStart = Date.now();
     isRecording = true;
     document.getElementById('start-btn').textContent = '■ STOPP';
@@ -824,9 +893,9 @@ function toggleRecording() {
     clearInterval(timerIv);
     document.getElementById('start-btn').textContent = 'START';
     document.getElementById('start-btn').classList.remove('recording');
-    document.getElementById('rec-dot').className = 'status-glow on';
+    document.getElementById('rec-dot').className = 'gps';
     document.getElementById('tt-rec-badge').style.display = 'none';
-    saveTrack();
+    saveTrack(true);
     showToast('Flug gespeichert — ' + track.length + ' Punkte');
   }
 }
@@ -844,12 +913,18 @@ function updateTimer() {
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
-function saveTrack() {
+function saveTrack(force = true) {
+  const now = Date.now();
+  if (!force && now - lastSaveTs < 5000) return;
+  lastSaveTs = now;
   try {
     localStorage.setItem('glideos_track', JSON.stringify(track));
     localStorage.setItem('glideos_ac', selectedAC);
-    localStorage.setItem('glideos_start', String(flightStart));
-  } catch(e) {}
+    localStorage.setItem('glideos_start', String(flightStart || Date.now()));
+    localStorage.setItem('glideos_story_map', storyMapMode ? '1' : '0');
+  } catch(e) {
+    showToast('Speicher voll — IGC sichern!');
+  }
 }
 
 function loadTrack() {
@@ -857,9 +932,12 @@ function loadTrack() {
     const t = localStorage.getItem('glideos_track');
     const a = localStorage.getItem('glideos_ac');
     const s = localStorage.getItem('glideos_start');
+    const sm = localStorage.getItem('glideos_story_map');
     if (t) track = JSON.parse(t);
     if (a) { selectedAC = a; selectAC(a, true); }
     if (s) flightStart = parseInt(s);
+    storyMapMode = sm === '1';
+    updateStoryMapButton();
   } catch(e) {}
 }
 
@@ -871,6 +949,9 @@ function selectAC(ac, silent) {
   document.getElementById('ac-ask13').classList.toggle('active', ac === 'ASK13');
   document.getElementById('ac-ask21').classList.toggle('active', ac === 'ASK21');
   document.getElementById('tt-ac-label').textContent = AC[ac].name;
+  const sel = document.getElementById('tt-ac-sel');
+  if (sel) sel.value = ac;
+  saveTrack(true);
   if (!silent) showToast(AC[ac].name + ' ausgewählt');
 }
 
@@ -881,7 +962,6 @@ function toggleTikTok() {
   tiktokVisible = !tiktokVisible;
   document.getElementById('tiktok-overlay').classList.toggle('show', tiktokVisible);
   document.getElementById('tiktok-btn').classList.toggle('active', tiktokVisible);
-  // Start GPS on first toggle too
   if (tiktokVisible) startGPS();
 }
 
@@ -891,15 +971,17 @@ function toggleTikTok() {
 let motionActive = false;
 
 function checkMotionPermission() {
-  // Show the button if DeviceMotionEvent exists but might need permission
+  document.getElementById('motion-card').style.display = 'block';
   if (typeof DeviceMotionEvent !== 'undefined') {
     if (typeof DeviceMotionEvent.requestPermission === 'function') {
-      // iOS 13+ — needs explicit permission
       document.getElementById('motion-perm-btn').classList.add('show');
     } else {
-      // Android/Desktop — just start
       startMotion();
     }
+  } else {
+    document.getElementById('m-ax').textContent = '---';
+    document.getElementById('m-ay').textContent = '---';
+    document.getElementById('m-az').textContent = '---';
   }
 }
 
@@ -933,7 +1015,6 @@ function startMotion() {
   });
 
   window.addEventListener('deviceorientation', (e) => {
-    // beta = front-back tilt (pitch), gamma = left-right (roll)
     if (e.beta != null) {
       document.getElementById('m-pitch').textContent = (e.beta || 0).toFixed(1);
       document.getElementById('m-roll').textContent  = (e.gamma || 0).toFixed(1);
@@ -951,7 +1032,6 @@ function switchTab(tab) {
   document.getElementById('nav-' + tab).classList.add('active');
   if (tab === 'tt' && !ttMapReady) initTTMap();
   if (tab === 'story') refreshStory();
-  // Nudge GPS on first real interaction
   startGPS();
 }
 
@@ -980,6 +1060,7 @@ function hdgDiff(h1, h2) {
 function analyzeTrack() {
   loadTrack();
   if (!track || track.length < 5) { showToast('Kein Track — erst fliegen!'); return; }
+  if (!ttMapReady) initTTMap();
 
   ttLayers.forEach(l => ttMap.removeLayer(l));
   ttLayers = [];
@@ -993,23 +1074,26 @@ function analyzeTrack() {
   while (i < track.length - 1) {
     let j = i + 1, hdgAcc = 0;
     while (j < track.length && (track[j].ts - track[i].ts)/1000 <= WINDOW_S) {
-      hdgAcc += hdgDiff(track[j-1].hdg, track[j].hdg);
+      const ddh = (track[j-1].hdg != null && track[j].hdg != null) ? hdgDiff(track[j-1].hdg, track[j].hdg) : null;
+      if (ddh != null) hdgAcc += ddh;
       j++;
     }
     const isThermic = hdgAcc >= CIRCLE_DEG;
-    // extend seg while type matches
     let k = Math.min(j, track.length);
     while (k < track.length) {
       let ha = 0, l = k+1;
       while (l < track.length && (track[l].ts - track[k].ts)/1000 <= WINDOW_S) {
-        ha += hdgDiff(track[l-1].hdg, track[l].hdg); l++;
+        const ddh2 = (track[l-1].hdg != null && track[l].hdg != null) ? hdgDiff(track[l-1].hdg, track[l].hdg) : null;
+        if (ddh2 != null) ha += ddh2;
+        l++;
       }
       if ((ha >= CIRCLE_DEG) !== isThermic) break;
       k++;
     }
     if (k >= track.length) k = track.length;
     const pts = track.slice(i, k);
-    const avgV = pts.reduce((s,p) => s + (p.vario||0), 0) / (pts.length||1);
+    const validV = pts.map(p => p.vario).filter(v => v != null && Number.isFinite(v));
+    const avgV = validV.length ? validV.reduce((s,v) => s + v, 0) / validV.length : 0;
     segs.push({ pts, thermic: isThermic, avgV });
     i = Math.max(i+1, k-1);
     if (k >= track.length) break;
@@ -1031,13 +1115,14 @@ function analyzeTrack() {
 
     for (let x=1; x<seg.pts.length; x++) {
       totalDist += haversine(seg.pts[x-1].lat,seg.pts[x-1].lon,seg.pts[x].lat,seg.pts[x].lon);
-      maxAlt = Math.max(maxAlt, seg.pts[x].alt);
+      if (seg.pts[x].alt != null && Number.isFinite(seg.pts[x].alt)) maxAlt = Math.max(maxAlt, seg.pts[x].alt);
     }
     const segDur = (seg.pts[seg.pts.length-1].ts - seg.pts[0].ts) / 1000;
     totalTime += segDur;
     if (seg.thermic) {
       thermTime += segDur;
-      const rise = seg.pts[seg.pts.length-1].alt - seg.pts[0].alt;
+      const a0 = seg.pts[0].alt, a1 = seg.pts[seg.pts.length-1].alt;
+      const rise = (a0 != null && a1 != null) ? a1 - a0 : 0;
       if (rise > 0) { altGain += rise; climbRates.push(seg.avgV); }
     }
   });
@@ -1066,10 +1151,24 @@ function analyzeTrack() {
 // ═══════════════════════════════════════════
 // STORY
 // ═══════════════════════════════════════════
+function updateStoryMapButton() {
+  const b = document.getElementById('story-map-btn');
+  if (b) b.textContent = storyMapMode ? 'MAP AN' : 'MAP AUS';
+}
+
+function toggleStoryMap() {
+  storyMapMode = !storyMapMode;
+  updateStoryMapButton();
+  saveTrack(true);
+  refreshStory();
+  showToast(storyMapMode ? 'Story: Karte an' : 'Story: nur Fluglinie');
+}
+
 function refreshStory() {
   loadTrack();
   const ac = AC[selectedAC] || AC.ASK13;
   document.getElementById('s-ac').textContent = ac.name;
+  updateStoryMapButton();
 
   if (!track || track.length < 2) {
     document.getElementById('s-dist').textContent = '0.0';
@@ -1087,11 +1186,12 @@ function refreshStory() {
 
   let dist=0, altGain=0, glideDist=0, glideDrop=0;
   for (let i=1; i<track.length; i++) {
-    const da = track[i].alt - track[i-1].alt;
     const dd = haversine(track[i-1].lat,track[i-1].lon,track[i].lat,track[i].lon);
+    const hasAlt = track[i].alt != null && track[i-1].alt != null;
+    const da = hasAlt ? track[i].alt - track[i-1].alt : 0;
     dist += dd;
-    if (da > 0) altGain += da;
-    if (da < 0 && dd > 0) { glideDist += dd; glideDrop += Math.abs(da); }
+    if (hasAlt && da > 0) altGain += da;
+    if (hasAlt && da < 0 && dd > 0) { glideDist += dd; glideDrop += Math.abs(da); }
   }
 
   const durS = (track[track.length-1].ts - track[0].ts) / 1000;
@@ -1117,6 +1217,35 @@ function drawStoryTrack(pts) {
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, wrap.offsetWidth, wrap.offsetHeight);
 
+  if (storyMapMode) {
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, wrap.offsetWidth, wrap.offsetHeight);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.055)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < wrap.offsetWidth; x += 28) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, wrap.offsetHeight);
+      ctx.stroke();
+    }
+    for (let y = 0; y < wrap.offsetHeight; y += 28) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(wrap.offsetWidth, y);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = 'rgba(56,189,248,0.08)';
+    ctx.lineWidth = 2;
+    for (let x = -wrap.offsetHeight; x < wrap.offsetWidth; x += 50) {
+      ctx.beginPath();
+      ctx.moveTo(x, wrap.offsetHeight);
+      ctx.lineTo(x + wrap.offsetHeight, 0);
+      ctx.stroke();
+    }
+  }
+
   if (!pts || pts.length < 2) {
     ctx.strokeStyle = 'rgba(34,197,94,0.15)';
     ctx.lineWidth = 2; ctx.setLineDash([6,6]);
@@ -1137,6 +1266,20 @@ function drawStoryTrack(pts) {
   const ox = (W - loR*scale)/2, oy = (H - laR*scale)/2;
   const tx = lo => pad + ox + (lo-minLo)*scale;
   const ty = la => pad + oy + (maxLa-la)*scale;
+
+  if (storyMapMode) {
+    ctx.shadowColor = 'rgba(0,0,0,0)';
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 10;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(tx(pts[0].lon), ty(pts[0].lat));
+    for (let i=1; i<pts.length; i++) ctx.lineTo(tx(pts[i].lon), ty(pts[i].lat));
+    ctx.stroke();
+  }
 
   ctx.shadowColor = '#22c55e'; ctx.shadowBlur = 14;
   ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 3;
@@ -1189,7 +1332,8 @@ function downloadIGC() {
     const loD = Math.floor(Math.abs(pt.lon));
     const loM = String(Math.round((Math.abs(pt.lon)-loD)*60000)).padStart(5,'0');
     const loH = pt.lon >= 0 ? 'E' : 'W';
-    const a   = String(Math.max(0,Math.round(pt.alt))).padStart(5,'0');
+    const altIgc = pt.alt != null && Number.isFinite(pt.alt) ? pt.alt : 0;
+    const a   = String(Math.max(0,Math.round(altIgc))).padStart(5,'0');
     lines.push(`B${t}${String(laD).padStart(2,'0')}${laM}${laH}${String(loD).padStart(3,'0')}${loM}${loH}A${a}${a}000`);
   });
   lines.push('LglideOS EXPORT');
@@ -1226,8 +1370,16 @@ function showToast(msg) {
 // ═══════════════════════════════════════════
 loadTrack();
 checkMotionPermission();
-// Don't call startGPS on load — iOS blocks it without user gesture.
-// It fires on first button press (Start / TikTok / tab switch).
+const ttSel = document.getElementById('tt-ac-sel');
+if (ttSel) ttSel.addEventListener('change', () => selectAC(ttSel.value));
+
+// android/desktop fragt meistens direkt.
+// ios/safari braucht oft user gesture, deswegen zusätzlich first-tap fallback.
+setTimeout(() => {
+  try { startGPS(); } catch(e) {}
+}, 300);
+
+primeGPSOnce();
 </script>
 </body>
 </html>
