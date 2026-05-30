@@ -977,6 +977,244 @@ button, select {
   .live-map-card { min-height: 390px; }
   #live-map { min-height: 310px; }
 }
+
+/* ── UX PATCH: mehr map, footer tiefer, exports ── */
+#panel-flight {
+  position: relative;
+}
+.flight-scroll {
+  padding-bottom: 6px !important;
+}
+.flight-footer {
+  padding: 6px 12px calc(4px + var(--safe-bot)) !important;
+}
+.status-row {
+  margin-bottom: 6px !important;
+}
+.start-btn {
+  padding: 13px !important;
+  font-size: 25px !important;
+  border-radius: 13px !important;
+}
+.live-map-card {
+  min-height: 365px !important;
+}
+#live-map {
+  min-height: 285px !important;
+}
+.live-map-stats {
+  min-height: 62px;
+}
+@media (max-height: 760px) {
+  .flight-scroll {
+    padding-bottom: 4px !important;
+  }
+  .flight-footer {
+    padding-top: 5px !important;
+    padding-bottom: calc(3px + var(--safe-bot)) !important;
+  }
+  .status-row {
+    margin-bottom: 5px !important;
+  }
+  .start-btn {
+    padding: 12px !important;
+    font-size: 24px !important;
+  }
+  .live-map-card {
+    min-height: 325px !important;
+  }
+  #live-map {
+    min-height: 247px !important;
+  }
+}
+.export-stage {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 1080px;
+  pointer-events: none;
+  z-index: -1;
+}
+.telemetry-export {
+  width: 1080px;
+  height: 1920px;
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+}
+.telemetry-export-map {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  overflow: hidden;
+}
+.telemetry-export-map .leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+.telemetry-export-hud {
+  position: absolute;
+  left: 70px;
+  right: 70px;
+  bottom: 90px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 18px;
+}
+.telemetry-export-box {
+  background: rgba(8,8,8,0.62);
+  border: 2px solid rgba(255,255,255,0.12);
+  border-radius: 34px;
+  padding: 28px 32px;
+  backdrop-filter: blur(10px);
+}
+.telemetry-export-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 24px;
+  letter-spacing: 0.16em;
+  color: rgba(255,255,255,0.55);
+  text-transform: uppercase;
+}
+.telemetry-export-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 86px;
+  line-height: 0.95;
+  letter-spacing: 0.03em;
+  color: #fff;
+}
+.telemetry-export-value.acc {
+  color: #22c55e;
+}
+.telemetry-export-title {
+  position: absolute;
+  left: 70px;
+  top: 80px;
+  background: rgba(8,8,8,0.55);
+  border: 2px solid rgba(255,255,255,0.10);
+  border-radius: 999px;
+  padding: 18px 28px;
+  font-family: 'DM Mono', monospace;
+  font-size: 24px;
+  letter-spacing: 0.14em;
+  color: #22c55e;
+  text-transform: uppercase;
+}
+
+
+/* ── FLIGHT FULLSCREEN MAP ── */
+.live-full-btn {
+  position: absolute;
+  top: 12px;
+  left: 106px;
+  z-index: 601;
+  background: rgba(28,28,28,0.9);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 11px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+body.flight-map-full #topbar,
+body.flight-map-full #nav,
+body.flight-map-full .gps-err,
+body.flight-map-full .flight-scroll > .metric-card {
+  display: none !important;
+}
+body.flight-map-full #app {
+  padding-top: 0 !important;
+}
+body.flight-map-full #panel-flight {
+  background: #000 !important;
+}
+body.flight-map-full .flight-scroll {
+  padding: 0 !important;
+  display: flex !important;
+  overflow: hidden !important;
+}
+body.flight-map-full .live-map-card {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  border-radius: 0 !important;
+  border: none !important;
+  margin: 0 !important;
+}
+body.flight-map-full #live-map {
+  min-height: 0 !important;
+  height: 100% !important;
+}
+body.flight-map-full .live-map-stats {
+  display: none !important;
+}
+body.flight-map-full .live-full-btn {
+  left: 12px;
+  color: var(--acc);
+}
+.flight-map-overlay {
+  display: none;
+}
+body.flight-map-full .flight-map-overlay {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 18px;
+  z-index: 650;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  pointer-events: none;
+}
+.fmo-box {
+  background: rgba(17,17,17,0.82);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+.fmo-lbl {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  color: var(--text2);
+}
+.fmo-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px;
+  line-height: 1;
+  color: var(--text);
+}
+.fmo-val.acc {
+  color: var(--acc);
+}
+body.flight-map-full .flight-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 700;
+  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.92) 34%);
+  border-top: none;
+  padding: 70px 12px calc(8px + var(--safe-bot)) !important;
+}
+body.flight-map-full .status-row {
+  background: rgba(17,17,17,0.72);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 999px;
+  padding: 8px 12px;
+}
+body.flight-map-full .start-btn {
+  box-shadow: 0 8px 34px rgba(0,0,0,0.45);
+}
+body.flight-map-full .perm-btn.show {
+  display: none !important;
+}
+
 </style>
 </head>
 
@@ -1064,8 +1302,23 @@ button, select {
 
       <div class="live-map-card">
         <div class="live-map-head">LIVE MAP</div>
+        <button class="live-full-btn" id="live-full-btn" onclick="toggleFlightMapFullscreen()">FULL MAP</button>
         <div class="live-wind-badge" id="live-wind">WIND --</div>
         <div id="live-map"></div>
+        <div class="flight-map-overlay" id="flight-map-overlay">
+          <div class="fmo-box">
+            <div class="fmo-lbl">KMH</div>
+            <div class="fmo-val acc" id="fmo-speed">0</div>
+          </div>
+          <div class="fmo-box">
+            <div class="fmo-lbl">HÖHE</div>
+            <div class="fmo-val" id="fmo-alt">---</div>
+          </div>
+          <div class="fmo-box">
+            <div class="fmo-lbl">VARIO</div>
+            <div class="fmo-val" id="fmo-vario">---</div>
+          </div>
+        </div>
         <div class="live-map-stats">
           <div class="live-map-stat">
             <div class="live-map-lbl">Distanz</div>
@@ -1169,6 +1422,10 @@ button, select {
         <button class="s-btn sec" onclick="refreshStory()">↻ REFRESH</button>
         <button class="s-btn primary" onclick="exportStory()">⬇ PNG</button>
       </div>
+      <div class="story-btns">
+        <button class="s-btn sec" onclick="exportStoryTransparent()">TRANSPARENT PNG</button>
+        <button class="s-btn sec" onclick="exportTelemetryOverlay()">MAP HUD PNG</button>
+      </div>
       <button class="igc-btn" onclick="downloadIGC()">⬇ IGC DATEI HERUNTERLADEN</button>
     </div>
   </div>
@@ -1226,6 +1483,12 @@ let tiktokVisible = false;
 let storyMapMode = false;
 let lastSaveTs = 0;
 let lastFixForHeading = null;
+let flightMapFullscreen = false;
+let smoothedFix = null;
+let displayGs = 0;
+let displayAlt = null;
+let displayVario = null;
+let latestFix = null;
 
 let liveMap = null;
 let liveMapReady = false;
@@ -1321,6 +1584,17 @@ function updateVarioDisplay(v) {
   }
 }
 
+
+function toggleFlightMapFullscreen() {
+  flightMapFullscreen = !flightMapFullscreen;
+  document.body.classList.toggle('flight-map-full', flightMapFullscreen);
+  const btn = document.getElementById('live-full-btn');
+  if (btn) btn.textContent = flightMapFullscreen ? 'EXIT MAP' : 'FULL MAP';
+  setTimeout(() => {
+    if (liveMapReady && liveMap) liveMap.invalidateSize();
+  }, 180);
+}
+
 /* GPS */
 let gpsStarted = false;
 let gpsPrimed = false;
@@ -1371,39 +1645,71 @@ function onGPSErr(e) {
 }
 
 function onGPS(pos) {
-  const { latitude: lat, longitude: lon, altitude, speed, heading } = pos.coords;
+  const { latitude: rawLat, longitude: rawLon, altitude, speed, heading } = pos.coords;
   const ts = pos.timestamp;
-  const alt = altitude != null && Number.isFinite(altitude) ? altitude : null;
-  const gs = speed != null && Number.isFinite(speed) ? speed * 3.6 : 0;
-  let hdg = heading != null && Number.isFinite(heading) ? Math.round(heading) : null;
+  const rawAlt = altitude != null && Number.isFinite(altitude) ? altitude : null;
+  const rawGs = speed != null && Number.isFinite(speed) ? speed * 3.6 : 0;
 
-  if (hdg == null && lastFixForHeading) {
-    const d = haversine(lastFixForHeading.lat, lastFixForHeading.lon, lat, lon);
-    if (d >= 3) hdg = Math.round(bearingDeg(lastFixForHeading.lat, lastFixForHeading.lon, lat, lon));
+  // gps smoothing: echte daten bleiben roh im track, aber ui/map läuft weicher
+  if (!smoothedFix) {
+    smoothedFix = { lat: rawLat, lon: rawLon, alt: rawAlt, ts };
+  } else {
+    const d = haversine(smoothedFix.lat, smoothedFix.lon, rawLat, rawLon);
+    const factor = d > 80 ? 1 : 0.28; // große sprünge direkt, kleine sprünge weich
+    smoothedFix.lat += (rawLat - smoothedFix.lat) * factor;
+    smoothedFix.lon += (rawLon - smoothedFix.lon) * factor;
+    if (rawAlt != null) {
+      smoothedFix.alt = smoothedFix.alt == null ? rawAlt : smoothedFix.alt + (rawAlt - smoothedFix.alt) * 0.22;
+    }
+    smoothedFix.ts = ts;
   }
-  lastFixForHeading = { lat, lon, ts };
 
-  const vario = smoothVario(alt, ts);
+  const lat = smoothedFix.lat;
+  const lon = smoothedFix.lon;
+  const alt = smoothedFix.alt;
+  displayGs = displayGs + (rawGs - displayGs) * 0.35;
 
-  document.getElementById('disp-gs').textContent = Math.round(gs);
+  let hdg = heading != null && Number.isFinite(heading) ? Math.round(heading) : null;
+  if (hdg == null && lastFixForHeading) {
+    const d = haversine(lastFixForHeading.lat, lastFixForHeading.lon, rawLat, rawLon);
+    if (d >= 3) hdg = Math.round(bearingDeg(lastFixForHeading.lat, lastFixForHeading.lon, rawLat, rawLon));
+  }
+  lastFixForHeading = { lat: rawLat, lon: rawLon, ts };
+
+  const rawVario = smoothVario(rawAlt, ts);
+  if (rawVario != null) displayVario = displayVario == null ? rawVario : displayVario + (rawVario - displayVario) * 0.28;
+
+  latestFix = { lat: rawLat, lon: rawLon, alt: rawAlt, ts, gs: rawGs, hdg, vario: rawVario };
+
+  document.getElementById('disp-gs').textContent = Math.round(displayGs);
   document.getElementById('disp-hdg').textContent = hdg != null ? hdg + '°' : '---';
   document.getElementById('disp-alt').textContent = alt != null ? Math.round(alt) : '---';
-  updateVarioDisplay(vario);
+  updateVarioDisplay(displayVario);
 
-  document.getElementById('tt-gs').innerHTML = Math.round(gs) + '<span>km/h</span>';
+  const fmoSpeed = document.getElementById('fmo-speed');
+  const fmoAlt = document.getElementById('fmo-alt');
+  const fmoVario = document.getElementById('fmo-vario');
+  if (fmoSpeed) fmoSpeed.textContent = Math.round(displayGs);
+  if (fmoAlt) fmoAlt.textContent = alt != null ? Math.round(alt) : '---';
+  if (fmoVario) {
+    fmoVario.textContent = displayVario != null ? ((displayVario >= 0 ? '+' : '') + displayVario.toFixed(1)) : '---';
+    fmoVario.style.color = displayVario != null && displayVario > 0.3 ? 'var(--acc)' : displayVario != null && displayVario < -0.3 ? 'var(--blue)' : 'var(--text)';
+  }
+
+  document.getElementById('tt-gs').innerHTML = Math.round(displayGs) + '<span>km/h</span>';
   document.getElementById('tt-alt').textContent = alt != null ? Math.round(alt) : '---';
   document.getElementById('tt-hdg').textContent = hdg != null ? hdg + '°' : '---';
-  document.getElementById('tt-vario').textContent = vario != null ? ((vario >= 0 ? '+' : '') + vario.toFixed(1)) : '---';
-  document.getElementById('tt-vario').style.color = vario != null && vario > 0.3 ? 'var(--acc)' : vario != null && vario < -0.3 ? 'var(--blue)' : 'var(--text)';
+  document.getElementById('tt-vario').textContent = displayVario != null ? ((displayVario >= 0 ? '+' : '') + displayVario.toFixed(1)) : '---';
+  document.getElementById('tt-vario').style.color = displayVario != null && displayVario > 0.3 ? 'var(--acc)' : displayVario != null && displayVario < -0.3 ? 'var(--blue)' : 'var(--text)';
 
   document.getElementById('rec-dot').className = isRecording ? 'rec' : 'gps';
-  setStatus('GPS OK · ' + lat.toFixed(4) + ',' + lon.toFixed(4), 'on');
-  updateLiveMap(lat, lon, alt, gs, hdg);
+  setStatus('GPS OK · ' + rawLat.toFixed(4) + ',' + rawLon.toFixed(4), 'on');
+  updateLiveMap(lat, lon, alt, displayGs, hdg);
 
   if (isRecording) {
     const last = track[track.length - 1];
     if (!last || ts - last.ts >= 1000) {
-      track.push({ lat, lon, alt, ts, gs, hdg, vario });
+      track.push({ lat: rawLat, lon: rawLon, alt: rawAlt, ts, gs: rawGs, hdg, vario: rawVario });
       document.getElementById('disp-pts').textContent = track.length;
       saveTrack(false);
     }
@@ -1982,6 +2288,101 @@ function exportStory() {
       showToast('PNG gespeichert!');
     })
     .catch(() => showToast('Export fehlgeschlagen'));
+}
+
+function exportStoryTransparent() {
+  const el = document.getElementById('story-frame');
+  const oldBg = el.style.background;
+  const oldBorder = el.style.borderColor;
+  el.style.background = 'transparent';
+  el.style.borderColor = 'transparent';
+
+  html2canvas(el, { backgroundColor: null, scale: 3, useCORS: true, logging: false })
+    .then(c => {
+      const a = document.createElement('a');
+      a.download = 'glideos-story-transparent-' + Date.now() + '.png';
+      a.href = c.toDataURL('image/png');
+      a.click();
+      showToast('Transparent PNG gespeichert!');
+    })
+    .catch(() => showToast('Export fehlgeschlagen'))
+    .finally(() => {
+      el.style.background = oldBg;
+      el.style.borderColor = oldBorder;
+    });
+}
+
+function exportTelemetryOverlay() {
+  const fix = latestFix || (track && track.length ? track[track.length - 1] : null);
+  if (!fix) {
+    showToast('Noch kein GPS-Fix');
+    return;
+  }
+
+  const stage = document.createElement('div');
+  stage.className = 'export-stage';
+  const wrap = document.createElement('div');
+  wrap.className = 'telemetry-export';
+  wrap.innerHTML = `
+    <div class="telemetry-export-map" id="export-map"></div>
+    <div class="telemetry-export-title">glideOS · telemetry</div>
+    <div class="telemetry-export-hud">
+      <div class="telemetry-export-box">
+        <div class="telemetry-export-label">Speed</div>
+        <div class="telemetry-export-value acc">${Math.round(displayGs || fix.gs || 0)} km/h</div>
+      </div>
+      <div class="telemetry-export-box">
+        <div class="telemetry-export-label">Höhe</div>
+        <div class="telemetry-export-value">${fix.alt != null ? Math.round(fix.alt) + ' m' : '---'}</div>
+      </div>
+      <div class="telemetry-export-box">
+        <div class="telemetry-export-label">Vario</div>
+        <div class="telemetry-export-value">${displayVario != null ? ((displayVario >= 0 ? '+' : '') + displayVario.toFixed(1)) : '---'}</div>
+      </div>
+    </div>
+  `;
+  stage.appendChild(wrap);
+  document.body.appendChild(stage);
+
+  const exportMap = L.map(wrap.querySelector('#export-map'), {
+    zoomControl: false,
+    attributionControl: false,
+    dragging: false,
+    tap: false
+  });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    crossOrigin: true
+  }).addTo(exportMap);
+
+  const pts = track && track.length ? track.map(p => [p.lat, p.lon]) : [[fix.lat, fix.lon]];
+  L.polyline(pts, { color: '#22c55e', weight: 8, opacity: 0.95 }).addTo(exportMap);
+  L.circleMarker([fix.lat, fix.lon], {
+    radius: 14,
+    color: '#22c55e',
+    fillColor: '#22c55e',
+    fillOpacity: 1
+  }).addTo(exportMap);
+
+  if (pts.length > 1) exportMap.fitBounds(pts, { padding: [120, 120] });
+  else exportMap.setView([fix.lat, fix.lon], 15);
+
+  setTimeout(() => {
+    exportMap.invalidateSize();
+    html2canvas(wrap, { backgroundColor: null, scale: 1, useCORS: true, logging: false })
+      .then(c => {
+        const a = document.createElement('a');
+        a.download = 'glideos-telemetry-overlay-' + Date.now() + '.png';
+        a.href = c.toDataURL('image/png');
+        a.click();
+        showToast('MAP HUD PNG gespeichert!');
+      })
+      .catch(() => showToast('HUD Export fehlgeschlagen'))
+      .finally(() => {
+        exportMap.remove();
+        stage.remove();
+      });
+  }, 800);
 }
 
 /* IGC */
