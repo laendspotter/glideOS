@@ -1485,6 +1485,36 @@ body.flight-map-full .perm-btn.show {
   box-shadow: 0 10px 35px rgba(0,0,0,0.45);
 }
 
+
+/* ── FINAL IPHONE PWA HEIGHT FIX ── */
+html,
+body,
+#app {
+  width: 100%;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+}
+
+body {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+.panel {
+  min-height: 0 !important;
+}
+
+.flight-footer {
+  margin-top: auto !important;
+}
+
+#panel-flight,
+#panel-tt,
+#panel-story,
+#panel-lab {
+  min-height: 0 !important;
+}
+
 </style>
 </head>
 
