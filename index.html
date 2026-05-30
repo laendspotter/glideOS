@@ -1215,6 +1215,276 @@ body.flight-map-full .perm-btn.show {
   display: none !important;
 }
 
+
+/* ── LAB TAB + CLEAN FULLSCREEN MAP ── */
+#nav .nav-btn {
+  font-size: 8px;
+}
+#motion-card {
+  display: none !important;
+}
+#motion-perm-btn.show {
+  display: none !important;
+}
+.live-map-card {
+  min-height: 430px !important;
+}
+#live-map {
+  min-height: 350px !important;
+}
+.flight-footer {
+  padding-top: 6px !important;
+  padding-bottom: calc(5px + var(--safe-bot)) !important;
+}
+.start-btn {
+  padding: 13px !important;
+}
+@media (max-height: 760px) {
+  .live-map-card {
+    min-height: 390px !important;
+  }
+  #live-map {
+    min-height: 315px !important;
+  }
+}
+
+.lab-wrap {
+  padding: 12px 12px calc(18px + var(--safe-bot));
+}
+.lab-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 10px;
+}
+.lab-kicker {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--text2);
+  letter-spacing: 0.14em;
+}
+.lab-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 34px;
+  letter-spacing: 0.08em;
+}
+.lab-main-btn,
+.lab-small-btn {
+  border: none;
+  border-radius: 12px;
+  background: var(--acc);
+  color: #000;
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+.lab-main-btn {
+  padding: 12px 16px;
+  font-size: 20px;
+}
+.lab-small-btn {
+  margin-top: 10px;
+  padding: 8px 12px;
+  font-size: 15px;
+}
+.lab-small-btn.wide {
+  width: 100%;
+}
+.lab-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.lab-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 13px 12px;
+  min-height: 112px;
+  position: relative;
+  overflow: hidden;
+}
+.lab-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--acc), transparent);
+  opacity: 0.5;
+}
+.lab-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  color: var(--text2);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.lab-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 34px;
+  line-height: 1;
+  color: var(--text);
+}
+.lab-value.acc {
+  color: var(--acc);
+}
+.lab-value.blue {
+  color: var(--blue);
+}
+.lab-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  color: var(--text3);
+  letter-spacing: 0.08em;
+  margin-top: 3px;
+}
+.lab-details {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 13px 12px;
+  margin-top: 10px;
+}
+.lab-details summary {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--text2);
+  text-transform: uppercase;
+}
+.lab-motion {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-top: 12px;
+}
+.lab-motion div {
+  text-align: center;
+  background: var(--bg2);
+  border-radius: 10px;
+  padding: 9px 4px;
+}
+.lab-motion span {
+  display: block;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px;
+}
+.lab-motion small {
+  font-family: 'DM Mono', monospace;
+  font-size: 7px;
+  color: var(--text3);
+  text-transform: uppercase;
+}
+
+#fullscreen-map-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: #000;
+}
+#fullscreen-map-overlay.show {
+  display: block;
+}
+#fullscreen-map {
+  position: absolute;
+  inset: 0;
+}
+.fs-exit,
+.fs-wind {
+  position: absolute;
+  top: calc(var(--safe-top) + 12px);
+  z-index: 9020;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 999px;
+  background: rgba(17,17,17,0.82);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 10px 14px;
+}
+.fs-exit {
+  left: 12px;
+  color: var(--acc);
+}
+.fs-wind {
+  right: 12px;
+  color: var(--blue);
+  max-width: 58%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fs-hud {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: calc(112px + var(--safe-bot));
+  z-index: 9020;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  pointer-events: none;
+}
+.fs-box {
+  background: rgba(17,17,17,0.82);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+.fs-lbl {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  color: var(--text2);
+  letter-spacing: 0.15em;
+}
+.fs-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 38px;
+  line-height: 1;
+  color: var(--text);
+}
+.fs-val.acc {
+  color: var(--acc);
+}
+.fs-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9030;
+  padding: 44px 12px calc(8px + var(--safe-bot));
+  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.9) 36%);
+}
+.fs-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(17,17,17,0.78);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text2);
+}
+.fs-status strong {
+  margin-left: auto;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  color: var(--acc);
+}
+.fs-start {
+  box-shadow: 0 10px 35px rgba(0,0,0,0.45);
+}
+
 </style>
 </head>
 
@@ -1237,6 +1507,7 @@ body.flight-map-full .perm-btn.show {
     <button class="nav-btn active" onclick="switchTab('flight')" id="nav-flight"><span class="nav-icon">◉</span>FLIGHT</button>
     <button class="nav-btn" onclick="switchTab('tt')" id="nav-tt"><span class="nav-icon">◈</span>ANALYSE</button>
     <button class="nav-btn" onclick="switchTab('story')" id="nav-story"><span class="nav-icon">◻</span>STORY</button>
+    <button class="nav-btn" onclick="switchTab('lab')" id="nav-lab"><span class="nav-icon">✦</span>LAB</button>
   </div>
 
   <div class="panel active" id="panel-flight">
@@ -1302,7 +1573,7 @@ body.flight-map-full .perm-btn.show {
 
       <div class="live-map-card">
         <div class="live-map-head">LIVE MAP</div>
-        <button class="live-full-btn" id="live-full-btn" onclick="toggleFlightMapFullscreen()">FULL MAP</button>
+        <button class="live-full-btn" id="live-full-btn" onclick="openFullscreenMap()">FULL MAP</button>
         <div class="live-wind-badge" id="live-wind">WIND --</div>
         <div id="live-map"></div>
         <div class="flight-map-overlay" id="flight-map-overlay">
@@ -1429,7 +1700,97 @@ body.flight-map-full .perm-btn.show {
       <button class="igc-btn" onclick="downloadIGC()">⬇ IGC DATEI HERUNTERLADEN</button>
     </div>
   </div>
+
+  <div class="panel" id="panel-lab">
+    <div class="panel-scroll lab-wrap">
+      <div class="lab-hero">
+        <div>
+          <div class="lab-kicker">glideOS LAB</div>
+          <div class="lab-title">PRO FEATURES</div>
+        </div>
+        <button class="lab-main-btn" onclick="openFullscreenMap()">FULL MAP</button>
+      </div>
+
+      <div class="lab-grid">
+        <div class="lab-card">
+          <div class="lab-label">Live Gleitzahl</div>
+          <div class="lab-value" id="lab-glide">1:--</div>
+          <div class="lab-sub">aus sinkflug + distanz</div>
+        </div>
+        <div class="lab-card">
+          <div class="lab-label">Reach Radius</div>
+          <div class="lab-value acc" id="lab-reach">-- km</div>
+          <div class="lab-sub">höhe × gleitzahl</div>
+        </div>
+        <div class="lab-card">
+          <div class="lab-label">Wind</div>
+          <div class="lab-value blue" id="lab-wind">--</div>
+          <div class="lab-sub" id="lab-wind-sub">open-meteo</div>
+        </div>
+        <div class="lab-card">
+          <div class="lab-label">GPS Qualität</div>
+          <div class="lab-value" id="lab-gpsq">-- m</div>
+          <div class="lab-sub">accuracy vom browser</div>
+        </div>
+        <div class="lab-card">
+          <div class="lab-label">Höhengewinn</div>
+          <div class="lab-value" id="lab-gain">0 m</div>
+          <div class="lab-sub">positiver alt gain</div>
+        </div>
+        <div class="lab-card">
+          <div class="lab-label">Max Steigen</div>
+          <div class="lab-value acc" id="lab-maxclimb">--</div>
+          <div class="lab-sub">gps vario peak</div>
+        </div>
+        <div class="lab-card">
+          <div class="lab-label">Home</div>
+          <div class="lab-value" id="lab-home">--</div>
+          <div class="lab-sub" id="lab-home-sub">startplatz marker</div>
+          <button class="lab-small-btn" onclick="setHomeHere()">SET HOME</button>
+        </div>
+        <div class="lab-card">
+          <div class="lab-label">Thermik</div>
+          <div class="lab-value" id="lab-thermal">--</div>
+          <div class="lab-sub">kreisflug + steigen</div>
+        </div>
+      </div>
+
+      <details class="lab-details">
+        <summary>motion sensors</summary>
+        <div class="lab-motion">
+          <div><span id="lab-ax">0.0</span><small>x</small></div>
+          <div><span id="lab-ay">0.0</span><small>y</small></div>
+          <div><span id="lab-az">0.0</span><small>z</small></div>
+          <div><span id="lab-roll">0.0°</span><small>roll</small></div>
+          <div><span id="lab-pitch">0.0°</span><small>pitch</small></div>
+        </div>
+        <button class="lab-small-btn wide" onclick="requestMotion()">MOTION SENSOR AKTIVIEREN</button>
+      </details>
+    </div>
+  </div>
+
 </div>
+
+
+<div id="fullscreen-map-overlay">
+  <div id="fullscreen-map"></div>
+  <button class="fs-exit" onclick="closeFullscreenMap()">EXIT MAP</button>
+  <div class="fs-wind" id="fs-wind">WIND --</div>
+  <div class="fs-hud">
+    <div class="fs-box"><div class="fs-lbl">KMH</div><div class="fs-val acc" id="fs-speed">0</div></div>
+    <div class="fs-box"><div class="fs-lbl">HÖHE</div><div class="fs-val" id="fs-alt">---</div></div>
+    <div class="fs-box"><div class="fs-lbl">VARIO</div><div class="fs-val" id="fs-vario">---</div></div>
+  </div>
+  <div class="fs-bottom">
+    <div class="fs-status">
+      <span class="status-glow on"></span>
+      <span id="fs-status-text">GPS --</span>
+      <strong id="fs-time">00:00:00</strong>
+    </div>
+    <button class="start-btn fs-start" onclick="toggleRecording()" id="fs-start-btn">START</button>
+  </div>
+</div>
+
 
 <div id="tiktok-overlay">
   <div class="tiktok-inner">
@@ -1499,6 +1860,14 @@ let liveTrackLatLngs = [];
 let liveDistanceM = 0;
 let windMarker = null;
 let lastWindFetchTs = 0;
+let fullscreenMap = null;
+let fullscreenMapReady = false;
+let fullscreenMarker = null;
+let fullscreenLine = null;
+let fullscreenLatLngs = [];
+let homeFix = null;
+let reachCircle = null;
+let fullscreenReachCircle = null;
 
 const VARIO_N = 5;
 let altBuf = [];
@@ -1595,6 +1964,185 @@ function toggleFlightMapFullscreen() {
   }, 180);
 }
 
+
+function updateLabValues() {
+  const fix = latestFix || (track && track.length ? track[track.length - 1] : null);
+  const ac = AC[selectedAC] || AC.ASK13;
+
+  let gain = 0;
+  let maxClimb = null;
+  let glide = null;
+
+  if (track && track.length > 1) {
+    for (let i = 1; i < track.length; i++) {
+      const a0 = track[i-1].alt;
+      const a1 = track[i].alt;
+      const dd = haversine(track[i-1].lat, track[i-1].lon, track[i].lat, track[i].lon);
+      if (a0 != null && a1 != null) {
+        const da = a1 - a0;
+        if (da > 0) gain += da;
+        if (da < -1 && dd > 5) glide = Math.round(dd / Math.abs(da));
+      }
+      if (track[i].vario != null && Number.isFinite(track[i].vario)) {
+        maxClimb = maxClimb == null ? track[i].vario : Math.max(maxClimb, track[i].vario);
+      }
+    }
+  }
+
+  const reachKm = fix && fix.alt != null ? Math.max(0, (fix.alt * ac.glide) / 1000) : null;
+  setText('lab-glide', glide ? '1:' + glide : '1:--');
+  setText('lab-reach', reachKm != null ? reachKm.toFixed(1) + ' km' : '-- km');
+  setText('lab-gain', Math.round(gain) + ' m');
+  setText('lab-maxclimb', maxClimb != null ? ((maxClimb >= 0 ? '+' : '') + maxClimb.toFixed(1)) : '--');
+  setText('lab-gpsq', fix && fix.acc != null ? Math.round(fix.acc) + ' m' : '-- m');
+
+  if (fix && homeFix) {
+    const dist = haversine(homeFix.lat, homeFix.lon, fix.lat, fix.lon) / 1000;
+    const brg = Math.round(bearingDeg(fix.lat, fix.lon, homeFix.lat, homeFix.lon));
+    setText('lab-home', dist.toFixed(1) + ' km');
+    setText('lab-home-sub', brg + '° zurück');
+  } else {
+    setText('lab-home', '--');
+    setText('lab-home-sub', 'startplatz marker');
+  }
+
+  setText('lab-thermal', detectThermalText());
+}
+
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+function detectThermalText() {
+  if (!track || track.length < 20) return '--';
+  const recent = track.slice(-20);
+  let turn = 0;
+  let valid = 0;
+  for (let i = 1; i < recent.length; i++) {
+    if (recent[i-1].hdg != null && recent[i].hdg != null) {
+      turn += hdgDiff(recent[i-1].hdg, recent[i].hdg);
+      valid++;
+    }
+  }
+  const vs = recent.map(p => p.vario).filter(v => v != null && Number.isFinite(v));
+  const avgV = vs.length ? vs.reduce((a,b) => a + b, 0) / vs.length : 0;
+  if (valid > 8 && turn > 120 && avgV > 0.2) return '+' + avgV.toFixed(1);
+  return 'none';
+}
+
+function setHomeHere() {
+  const fix = latestFix || (track && track.length ? track[track.length - 1] : null);
+  if (!fix) {
+    showToast('Noch kein GPS-Fix');
+    return;
+  }
+  homeFix = { lat: fix.lat, lon: fix.lon, ts: fix.ts || Date.now() };
+  try { localStorage.setItem('glideos_home', JSON.stringify(homeFix)); } catch(e) {}
+  updateLabValues();
+  showToast('Home gesetzt');
+}
+
+function loadHome() {
+  try {
+    const h = localStorage.getItem('glideos_home');
+    if (h) homeFix = JSON.parse(h);
+  } catch(e) {}
+}
+
+function updateReachCircle(lat, lon, alt) {
+  const ac = AC[selectedAC] || AC.ASK13;
+  if (alt == null || !Number.isFinite(alt)) return;
+  const r = Math.max(0, alt * ac.glide);
+  if (liveMapReady && liveMap) {
+    if (!reachCircle) {
+      reachCircle = L.circle([lat, lon], { radius: r, color: '#22c55e', weight: 1, opacity: 0.28, fillOpacity: 0.03 }).addTo(liveMap);
+    } else {
+      reachCircle.setLatLng([lat, lon]);
+      reachCircle.setRadius(r);
+    }
+  }
+  if (fullscreenMapReady && fullscreenMap) {
+    if (!fullscreenReachCircle) {
+      fullscreenReachCircle = L.circle([lat, lon], { radius: r, color: '#22c55e', weight: 1, opacity: 0.35, fillOpacity: 0.04 }).addTo(fullscreenMap);
+    } else {
+      fullscreenReachCircle.setLatLng([lat, lon]);
+      fullscreenReachCircle.setRadius(r);
+    }
+  }
+}
+
+function initFullscreenMap() {
+  if (fullscreenMapReady || typeof L === 'undefined') return;
+  const el = document.getElementById('fullscreen-map');
+  if (!el) return;
+
+  fullscreenMap = L.map(el, {
+    zoomControl: true,
+    attributionControl: false,
+    dragging: true,
+    tap: true,
+    scrollWheelZoom: false
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    crossOrigin: true
+  }).addTo(fullscreenMap);
+
+  fullscreenLine = L.polyline([], { color: '#22c55e', weight: 5, opacity: 0.95 }).addTo(fullscreenMap);
+  fullscreenMarker = L.circleMarker([0, 0], {
+    radius: 9,
+    color: '#22c55e',
+    fillColor: '#22c55e',
+    fillOpacity: 1
+  }).addTo(fullscreenMap);
+
+  fullscreenMap.setView([51.1657, 10.4515], 5);
+  fullscreenMapReady = true;
+}
+
+function openFullscreenMap() {
+  initFullscreenMap();
+  const overlay = document.getElementById('fullscreen-map-overlay');
+  overlay.classList.add('show');
+  setTimeout(() => {
+    if (fullscreenMapReady && fullscreenMap) fullscreenMap.invalidateSize();
+    syncFullscreenMap();
+  }, 180);
+}
+
+function closeFullscreenMap() {
+  const overlay = document.getElementById('fullscreen-map-overlay');
+  overlay.classList.remove('show');
+}
+
+function syncFullscreenMap() {
+  if (!fullscreenMapReady || !fullscreenMap) return;
+  const fix = latestFix || (track && track.length ? track[track.length - 1] : null);
+  if (!fix) return;
+
+  fullscreenLatLngs = liveTrackLatLngs.length ? [...liveTrackLatLngs] : [[fix.lat, fix.lon]];
+  fullscreenLine.setLatLngs(fullscreenLatLngs);
+  fullscreenMarker.setLatLng([fix.lat, fix.lon]);
+
+  if (fullscreenLatLngs.length < 2) fullscreenMap.setView([fix.lat, fix.lon], 15);
+  else fullscreenMap.panTo([fix.lat, fix.lon], { animate: true, duration: 0.25 });
+
+  setText('fs-speed', Math.round(displayGs || fix.gs || 0));
+  setText('fs-alt', fix.alt != null ? Math.round(fix.alt) : '---');
+  setText('fs-vario', displayVario != null ? ((displayVario >= 0 ? '+' : '') + displayVario.toFixed(1)) : '---');
+  setText('fs-time', document.getElementById('disp-time').textContent);
+  setText('fs-status-text', 'GPS OK · ' + fix.lat.toFixed(4) + ',' + fix.lon.toFixed(4));
+  setText('fs-wind', document.getElementById('live-wind').textContent || 'WIND --');
+  const fsStart = document.getElementById('fs-start-btn');
+  if (fsStart) {
+    fsStart.textContent = isRecording ? '■ STOPP' : 'START';
+    fsStart.classList.toggle('recording', isRecording);
+  }
+  updateReachCircle(fix.lat, fix.lon, fix.alt);
+}
+
 /* GPS */
 let gpsStarted = false;
 let gpsPrimed = false;
@@ -1645,7 +2193,7 @@ function onGPSErr(e) {
 }
 
 function onGPS(pos) {
-  const { latitude: rawLat, longitude: rawLon, altitude, speed, heading } = pos.coords;
+  const { latitude: rawLat, longitude: rawLon, altitude, speed, heading, accuracy } = pos.coords;
   const ts = pos.timestamp;
   const rawAlt = altitude != null && Number.isFinite(altitude) ? altitude : null;
   const rawGs = speed != null && Number.isFinite(speed) ? speed * 3.6 : 0;
@@ -1679,7 +2227,7 @@ function onGPS(pos) {
   const rawVario = smoothVario(rawAlt, ts);
   if (rawVario != null) displayVario = displayVario == null ? rawVario : displayVario + (rawVario - displayVario) * 0.28;
 
-  latestFix = { lat: rawLat, lon: rawLon, alt: rawAlt, ts, gs: rawGs, hdg, vario: rawVario };
+  latestFix = { lat: rawLat, lon: rawLon, alt: rawAlt, ts, gs: rawGs, hdg, vario: rawVario, acc: accuracy };
 
   document.getElementById('disp-gs').textContent = Math.round(displayGs);
   document.getElementById('disp-hdg').textContent = hdg != null ? hdg + '°' : '---';
@@ -1705,6 +2253,9 @@ function onGPS(pos) {
   document.getElementById('rec-dot').className = isRecording ? 'rec' : 'gps';
   setStatus('GPS OK · ' + rawLat.toFixed(4) + ',' + rawLon.toFixed(4), 'on');
   updateLiveMap(lat, lon, alt, displayGs, hdg);
+  updateReachCircle(lat, lon, alt);
+  updateLabValues();
+  syncFullscreenMap();
 
   if (isRecording) {
     const last = track[track.length - 1];
@@ -1827,6 +2378,8 @@ async function maybeFetchWind(lat, lon) {
     const gust = Math.round(cur.wind_gusts_10m || 0);
 
     badge.textContent = 'WIND ' + spd + '/' + gust + ' KMH · ' + dir + '°';
+    setText('lab-wind', spd + '/' + gust);
+    setText('lab-wind-sub', dir + '°');
 
     if (liveMapReady) {
       const ll = [lat, lon];
@@ -1995,15 +2548,25 @@ function startMotion() {
   window.addEventListener('devicemotion', (e) => {
     const a = e.accelerationIncludingGravity;
     if (!a) return;
-    document.getElementById('m-ax').textContent = ((a.x || 0) / 9.81).toFixed(1);
-    document.getElementById('m-ay').textContent = ((a.y || 0) / 9.81).toFixed(1);
-    document.getElementById('m-az').textContent = ((a.z || 0) / 9.81).toFixed(1);
+    const gx = ((a.x || 0) / 9.81).toFixed(1);
+    const gy = ((a.y || 0) / 9.81).toFixed(1);
+    const gz = ((a.z || 0) / 9.81).toFixed(1);
+    document.getElementById('m-ax').textContent = gx;
+    document.getElementById('m-ay').textContent = gy;
+    document.getElementById('m-az').textContent = gz;
+    setText('lab-ax', gx);
+    setText('lab-ay', gy);
+    setText('lab-az', gz);
   });
 
   window.addEventListener('deviceorientation', (e) => {
     if (e.beta != null) {
-      document.getElementById('m-pitch').textContent = (e.beta || 0).toFixed(1);
-      document.getElementById('m-roll').textContent = (e.gamma || 0).toFixed(1);
+      const pitch = (e.beta || 0).toFixed(1);
+      const roll = (e.gamma || 0).toFixed(1);
+      document.getElementById('m-pitch').textContent = pitch;
+      document.getElementById('m-roll').textContent = roll;
+      setText('lab-pitch', pitch + '°');
+      setText('lab-roll', roll + '°');
     }
   });
 }
@@ -2018,6 +2581,7 @@ function switchTab(tab) {
   if (tab === 'tt' && !ttMapReady) initTTMap();
   if (tab === 'tt' && ttMapReady) setTimeout(() => ttMap.invalidateSize(), 120);
   if (tab === 'story') refreshStory();
+  if (tab === 'lab') updateLabValues();
 
   startGPS();
 }
@@ -2034,6 +2598,7 @@ function initTTMap() {
 
 function analyzeTrack() {
   loadTrack();
+loadHome();
   if (!track || track.length < 5) {
     showToast('Kein Track — erst fliegen!');
     return;
