@@ -212,6 +212,70 @@ body {
 }
 .motion-lbl { font-family: 'DM Mono', monospace; font-size: 7px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; }
 
+
+/* LIVE MAP IN FLIGHT */
+.live-map-wrap {
+  height: 168px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin: 8px 0 10px;
+  position: relative;
+  background: #101010;
+}
+#live-map {
+  width: 100%;
+  height: 100%;
+}
+.live-map-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 450;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(10,10,10,0.72);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--acc);
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.live-map-stats {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 450;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  background: rgba(10,10,10,0.78);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  pointer-events: none;
+}
+.live-map-stat {
+  padding: 7px 8px;
+  border-right: 1px solid rgba(255,255,255,0.08);
+}
+.live-map-stat:last-child { border-right: none; }
+.live-map-lbl {
+  font-family: 'DM Mono', monospace;
+  font-size: 7px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+}
+.live-map-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  line-height: 1;
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+.live-map-val.acc { color: var(--acc); }
+
 /* STATUS + REC BUTTON */
 .flight-footer {
   flex-shrink: 0;
@@ -545,6 +609,25 @@ body {
         <div class="status-txt" id="status-txt">GPS INITIALISIERUNG…</div>
         <div class="elapsed" id="disp-time">00:00:00</div>
       </div>
+      <div class="live-map-wrap">
+        <div id="live-map"></div>
+        <div class="live-map-badge" id="live-map-badge">LIVE MAP</div>
+        <div class="live-map-stats">
+          <div class="live-map-stat">
+            <div class="live-map-lbl">Distanz</div>
+            <div class="live-map-val acc" id="live-dist">0.0 km</div>
+          </div>
+          <div class="live-map-stat">
+            <div class="live-map-lbl">Speed</div>
+            <div class="live-map-val" id="live-speed">0 km/h</div>
+          </div>
+          <div class="live-map-stat">
+            <div class="live-map-lbl">Höhe</div>
+            <div class="live-map-val" id="live-alt">---</div>
+          </div>
+        </div>
+      </div>
+
       <button class="start-btn" id="start-btn" onclick="toggleRecording()">START</button>
     </div>
   </div>
@@ -690,6 +773,12 @@ let ttMapReady = false;
 let ttLayers = [];
 let tiktokVisible = false;
 let storyMapMode = false;
+let liveMap = null;
+let liveMapReady = false;
+let liveMarker = null;
+let liveLine = null;
+let liveMapPts = [];
+let liveMapLastPan = 0;
 let lastSaveTs = 0;
 let lastFixForHeading = null;
 
@@ -705,6 +794,128 @@ function smoothVario(alt, ts) {
   const dt = (altBuf[altBuf.length-1].ts - altBuf[0].ts) / 1000;
   if (dt < 0.5) return null;
   return (altBuf[altBuf.length-1].alt - altBuf[0].alt) / dt;
+}
+
+
+// ═══════════════════════════════════════════
+// LIVE MAP IM FLIGHT PANEL
+// ═══════════════════════════════════════════
+function initLiveMap() {
+  if (liveMapReady) return;
+  const el = document.getElementById('live-map');
+  if (!el || typeof L === 'undefined') return;
+
+  liveMap = L.map('live-map', {
+    zoomControl: false,
+    attributionControl: false,
+    dragging: true,
+    touchZoom: true,
+    scrollWheelZoom: false,
+    doubleClickZoom: true,
+    boxZoom: false,
+    keyboard: false
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18
+  }).addTo(liveMap);
+
+  liveLine = L.polyline([], {
+    color: '#22c55e',
+    weight: 4,
+    opacity: 0.95
+  }).addTo(liveMap);
+
+  liveMapReady = true;
+  setTimeout(() => {
+    try { liveMap.invalidateSize(); } catch(e) {}
+    refreshLiveMapFromTrack();
+  }, 250);
+}
+
+function calcTrackDistance(pts) {
+  if (!pts || pts.length < 2) return 0;
+  let d = 0;
+  for (let i = 1; i < pts.length; i++) {
+    d += haversine(pts[i-1].lat, pts[i-1].lon, pts[i].lat, pts[i].lon);
+  }
+  return d;
+}
+
+function refreshLiveMapFromTrack() {
+  if (!liveMapReady || !liveMap) return;
+  const pts = track && track.length ? track.slice(-500) : [];
+  liveMapPts = pts.map(p => [p.lat, p.lon]);
+  if (liveLine) liveLine.setLatLngs(liveMapPts);
+
+  if (pts.length) {
+    const last = pts[pts.length - 1];
+    const ll = [last.lat, last.lon];
+    if (!liveMarker) {
+      liveMarker = L.circleMarker(ll, {
+        radius: 6,
+        color: '#22c55e',
+        fillColor: '#22c55e',
+        fillOpacity: 1
+      }).addTo(liveMap);
+    } else {
+      liveMarker.setLatLng(ll);
+    }
+
+    if (liveMapPts.length > 1) liveMap.fitBounds(liveMapPts, { padding: [18,18] });
+    else liveMap.setView(ll, 15);
+  }
+
+  updateLiveMapStats();
+}
+
+function updateLiveMap(lat, lon, alt, gs) {
+  initLiveMap();
+  if (!liveMapReady || !liveMap) return;
+
+  const ll = [lat, lon];
+
+  if (!liveMarker) {
+    liveMarker = L.circleMarker(ll, {
+      radius: 6,
+      color: '#22c55e',
+      fillColor: '#22c55e',
+      fillOpacity: 1
+    }).addTo(liveMap);
+    liveMap.setView(ll, 15);
+  } else {
+    liveMarker.setLatLng(ll);
+  }
+
+  if (isRecording) {
+    const last = liveMapPts[liveMapPts.length - 1];
+    if (!last || haversine(last[0], last[1], lat, lon) >= 2) {
+      liveMapPts.push(ll);
+      if (liveMapPts.length > 700) liveMapPts.shift();
+      if (liveLine) liveLine.setLatLngs(liveMapPts);
+    }
+  } else if (!liveMapPts.length) {
+    liveMap.setView(ll, 15);
+  }
+
+  const now = Date.now();
+  if (now - liveMapLastPan > 3500) {
+    liveMapLastPan = now;
+    try { liveMap.panTo(ll, { animate: true, duration: 0.4 }); } catch(e) {}
+  }
+
+  document.getElementById('live-speed').textContent = Math.round(gs || 0) + ' km/h';
+  document.getElementById('live-alt').textContent = alt != null && Number.isFinite(alt) ? Math.round(alt) + ' m' : '---';
+  updateLiveMapStats();
+}
+
+function updateLiveMapStats() {
+  const pts = isRecording && liveMapPts.length
+    ? liveMapPts.map(x => ({ lat: x[0], lon: x[1] }))
+    : (track || []);
+  const distKm = calcTrackDistance(pts) / 1000;
+  const dEl = document.getElementById('live-dist');
+  if (dEl) dEl.textContent = distKm.toFixed(1) + ' km';
 }
 
 // ═══════════════════════════════════════════
@@ -795,6 +1006,7 @@ function onGPS(pos) {
   // REC dot top bar
   document.getElementById('rec-dot').className = isRecording ? 'rec' : 'gps';
   setStatus('GPS OK · ' + lat.toFixed(4) + ',' + lon.toFixed(4), 'on');
+  updateLiveMap(lat, lon, alt, gs);
 
   // Track recording — every second (1000ms gap)
   if (isRecording) {
@@ -880,6 +1092,8 @@ function toggleRecording() {
     track = [];
     altBuf = [];
     lastSaveTs = 0;
+    liveMapPts = [];
+    if (liveLine) liveLine.setLatLngs([]);
     flightStart = Date.now();
     isRecording = true;
     document.getElementById('start-btn').textContent = '■ STOPP';
@@ -1370,6 +1584,8 @@ function showToast(msg) {
 // ═══════════════════════════════════════════
 loadTrack();
 checkMotionPermission();
+initLiveMap();
+setTimeout(refreshLiveMapFromTrack, 600);
 const ttSel = document.getElementById('tt-ac-sel');
 if (ttSel) ttSel.addEventListener('change', () => selectAC(ttSel.value));
 
