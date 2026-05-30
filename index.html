@@ -142,7 +142,7 @@ body {
 }
 
 /* ── FLIGHT PANEL ── */
-#panel-flight { background: var(--bg); }
+#panel-flight { background: var(--bg); min-height: 0; }
 
 .flight-scroll {
   flex: 1;
@@ -153,6 +153,7 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   align-content: start;
+  padding-bottom: 12px;
 }
 
 .metric-card {
@@ -275,6 +276,95 @@ body {
   letter-spacing: 0.04em;
 }
 .live-map-val.acc { color: var(--acc); }
+
+
+/* LIVE MAP CARD */
+.live-map-card {
+  grid-column: 1 / -1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: relative;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+}
+.live-map-card::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--acc) 0%, transparent 100%);
+  opacity: 0.6;
+  z-index: 2;
+  pointer-events: none;
+}
+.live-map-head {
+  position: absolute;
+  top: 12px; left: 12px;
+  z-index: 500;
+  background: rgba(28,28,28,0.88);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 13px;
+  color: var(--acc);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+#live-map {
+  width: 100%;
+  flex: 1;
+  min-height: 205px;
+  background: #111;
+}
+.live-map-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  border-top: 1px solid var(--border);
+  background: rgba(17,17,17,0.96);
+  flex-shrink: 0;
+}
+.live-map-stat {
+  padding: 10px 14px 12px;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+.live-map-stat:last-child { border-right: none; }
+.live-map-lbl {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: 2px;
+}
+.live-map-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--text);
+  letter-spacing: 0.04em;
+}
+.live-map-val.acc { color: var(--acc); }
+
+@media (max-height: 760px) {
+  .metric-card { padding: 10px 12px; }
+  .metric-value { font-size: 40px; }
+  .metric-value.xl { font-size: 50px; }
+  .vario-num { font-size: 46px; }
+  .vario-bar-outer { height: 46px; }
+  .live-map-card { min-height: 220px; }
+  #live-map { min-height: 165px; }
+  .live-map-val { font-size: 22px; }
+}
+
+@media (min-height: 850px) {
+  .live-map-card { min-height: 330px; }
+  #live-map { min-height: 270px; }
+}
+
 
 /* STATUS + REC BUTTON */
 .flight-footer {
@@ -1028,6 +1118,11 @@ function onGPSErr(e) {
     gpsStarted = false;
     setStatus('GPS Timeout — tippen zum neu versuchen', 'search');
     primeGPSOnce();
+
+window.addEventListener('resize', () => {
+  if (liveMapReady && liveMap) setTimeout(() => liveMap.invalidateSize(), 150);
+  if (ttMapReady && ttMap) setTimeout(() => ttMap.invalidateSize(), 150);
+});
   } else {
     gpsStarted = false;
     setStatus('GPS Fehler: ' + e.message, 'err');
@@ -1596,6 +1691,11 @@ setTimeout(() => {
 }, 300);
 
 primeGPSOnce();
+
+window.addEventListener('resize', () => {
+  if (liveMapReady && liveMap) setTimeout(() => liveMap.invalidateSize(), 150);
+  if (ttMapReady && ttMap) setTimeout(() => ttMap.invalidateSize(), 150);
+});
 </script>
 </body>
 </html>
