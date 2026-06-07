@@ -257,11 +257,94 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
 .back-btn:active { background: var(--surface); }
 
 /* ═══════════════════════════════════════════════
-   FLIGHT SCREEN (original glideOS, minimal changes)
+   FLIGHT SCREEN
 ═══════════════════════════════════════════════ */
 #screen-flight {
   background: var(--bg);
 }
+
+/* FIX: Eigene Reg Zeile */
+#flight-reg-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.flight-reg-lbl {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text3);
+  white-space: nowrap;
+}
+.flight-reg-input {
+  flex: 1;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--acc);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  padding: 5px 9px;
+  outline: none;
+  text-transform: uppercase;
+  max-width: 110px;
+}
+.flight-reg-input:focus { border-color: var(--acc); }
+.flight-reg-input::placeholder { color: var(--text3); }
+.flight-reg-save {
+  background: var(--acc-dim);
+  border: 1px solid rgba(34,197,94,0.3);
+  border-radius: 7px;
+  color: var(--acc);
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.flight-reg-saved {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: 0.08em;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* OGN BG tracking badge */
+.flight-bg-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(56,189,248,0.3);
+  background: rgba(56,189,248,0.08);
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  color: var(--blue);
+  white-space: nowrap;
+}
+.flight-bg-badge .dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--blue);
+  animation: blink 2s infinite;
+}
+.flight-bg-badge.landed {
+  border-color: rgba(251,191,36,0.3);
+  background: rgba(251,191,36,0.08);
+  color: var(--yellow);
+}
+.flight-bg-badge.landed .dot { background: var(--yellow); animation: none; }
 
 .ac-pills { display: flex; gap: 6px; min-width: 0; }
 .ac-pill {
@@ -598,7 +681,6 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
   flex-direction: column;
 }
 
-/* Map nimmt den ganzen Platz */
 #tracker-map-wrap {
   flex: 1 1 auto;
   min-height: 0;
@@ -610,14 +692,16 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
   background: #111;
 }
 
-/* Bottom sheet */
+/* FIX: Bottom sheet scrollable + korrekte max-height */
 #tracker-sheet {
   flex-shrink: 0;
   background: var(--bg2);
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  max-height: 46vh;
+  /* FIX: war 46vh — jetzt dynamisch damit liste immer scrollt */
+  max-height: 50vh;
+  min-height: 0;
 }
 
 .sheet-handle {
@@ -628,6 +712,8 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   cursor: pointer;
+  /* touch-friendly */
+  min-height: 42px;
 }
 .sheet-handle-title {
   font-family: 'DM Mono', monospace;
@@ -683,11 +769,13 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
   flex-shrink: 0;
 }
 
+/* FIX: Liste muss innerhalb sheet scrollen, nicht der ganze sheet */
 #tracker-list {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
   padding: 8px 14px calc(8px + var(--safe-bot));
   display: flex;
   flex-direction: column;
@@ -704,6 +792,7 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
   line-height: 2;
 }
 
+/* FIX: Glider card — selected state mit border highlight */
 .glider-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -711,6 +800,10 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
   padding: 10px 12px;
   position: relative;
   overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  /* FIX: flex-shrink:0 damit karten nie kleiner werden */
+  flex-shrink: 0;
 }
 .glider-card::before {
   content: '';
@@ -722,6 +815,14 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
 .glider-card.has-fix::before { background: var(--blue); }
 .glider-card.no-fix::before  { background: var(--text3); }
 .glider-card.not-found::before { background: var(--yellow); }
+
+/* FIX: Selected/tapped state */
+.glider-card.selected {
+  border-color: var(--card-color, var(--blue));
+  box-shadow: 0 0 0 1px var(--card-color, var(--blue)), inset 0 0 0 1px rgba(255,255,255,0.04);
+  background: color-mix(in srgb, var(--surface) 90%, var(--card-color, var(--blue)) 10%);
+}
+.glider-card:active { opacity: 0.85; }
 
 .gc-top {
   display: flex;
@@ -757,7 +858,7 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
   color: var(--text3);
   font-size: 12px;
   cursor: pointer;
-  padding: 2px;
+  padding: 4px 4px 4px 8px;
   line-height: 1;
 }
 .gc-remove:hover { color: var(--red); }
@@ -770,12 +871,21 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
 .gc-status.waiting { color: var(--text3); }
 .gc-status.no-db   { color: var(--yellow); }
 
+/* FIX: live grid — alle daten anzeigen auch wenn viele karten */
 .gc-live {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 5px;
+  /* FIX: nie abschneiden */
+  overflow: visible;
 }
-.gc-live-item { text-align: center; background: var(--bg3); border-radius: 7px; padding: 6px 4px; }
+.gc-live-item {
+  text-align: center;
+  background: var(--bg3);
+  border-radius: 7px;
+  padding: 6px 4px;
+  min-width: 0;
+}
 .gc-live-lbl { font-family: 'DM Mono', monospace; font-size: 6px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); }
 .gc-live-val { font-family: 'Bebas Neue', sans-serif; font-size: 20px; line-height: 1.1; color: var(--text); }
 .gc-live-val.up   { color: var(--acc); }
@@ -789,7 +899,6 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
   margin-top: 4px;
 }
 
-/* Focus button: centering map on specific glider */
 .gc-focus {
   display: inline-flex;
   align-items: center;
@@ -807,7 +916,25 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
   text-transform: uppercase;
 }
 
-/* Map leaflet theming */
+/* ─── FIX: Leaflet Popup Dark Theme ─── */
+.leaflet-popup-content-wrapper {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+  color: var(--text) !important;
+}
+.leaflet-popup-tip-container { display: none !important; }
+/* FIX: selected card border via colored box-shadow on popup too */
+.leaflet-popup-content-wrapper:has(.popup-selected) {
+  border-color: var(--blue) !important;
+  box-shadow: 0 0 0 1px var(--blue), 0 8px 32px rgba(0,0,0,0.6) !important;
+}
 .leaflet-container { background: #111 !important; }
 .leaflet-tile { filter: brightness(0.72) saturate(0.65) !important; }
 
@@ -833,7 +960,7 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
 }
 #toast.show { opacity: 1; }
 
-/* EXPORT STUFF (flight mode) */
+/* EXPORT STUFF */
 .export-stage { position: fixed; left: -9999px; top: 0; width: 1080px; pointer-events: none; z-index: -1; }
 .telemetry-export { width: 1080px; height: 1920px; position: relative; overflow: hidden; background: transparent; color: #fff; font-family: 'Inter', sans-serif; }
 .telemetry-export-map { position: absolute; inset: 0; background: transparent; overflow: hidden; }
@@ -859,50 +986,40 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
 <body>
 <div id="app">
 
-  <!-- ═══════════════════════ HOME SCREEN ═══════════════════════ -->
+  <!-- HOME SCREEN -->
   <div class="screen active" id="screen-home">
     <div class="home-bg">
       <canvas class="home-bg-canvas" id="home-canvas"></canvas>
     </div>
-
     <div class="home-content">
       <div class="home-header">
         <div class="home-logo">glide<span>OS</span></div>
         <div class="home-tagline">soaring intelligence · v2</div>
       </div>
-
       <div class="home-cards">
         <button class="mode-card flight-mode" onclick="enterMode('flight')">
           <div class="mode-card-icon">◉</div>
           <div class="mode-card-body">
             <div class="mode-card-title">Mein Flug</div>
-            <div class="mode-card-sub">
-              GPS · Vario · Karte · IGC Export<br>
-              TikTok-Overlay · Story-Generator
-            </div>
+            <div class="mode-card-sub">GPS · Vario · Karte · IGC Export<br>TikTok-Overlay · Story-Generator</div>
           </div>
           <div class="mode-card-arrow">›</div>
         </button>
-
         <button class="mode-card track-mode" onclick="enterMode('tracker')">
           <div class="mode-card-icon">◈</div>
           <div class="mode-card-body">
             <div class="mode-card-title">Glider Tracken</div>
-            <div class="mode-card-sub">
-              OGN Live · Höhe · Speed · Vario<br>
-              Registrierung oder Wettbewerbs-ID
-            </div>
+            <div class="mode-card-sub">OGN Live · Höhe · Speed · Vario<br>Registrierung oder Wettbewerbs-ID</div>
           </div>
           <div class="mode-card-arrow">›</div>
         </button>
       </div>
-
       <div class="home-footer">glideOS · open-source soaring tools</div>
     </div>
   </div>
 
 
-  <!-- ═══════════════════════ FLIGHT SCREEN ═══════════════════════ -->
+  <!-- FLIGHT SCREEN -->
   <div class="screen" id="screen-flight">
 
     <div class="app-topbar">
@@ -918,6 +1035,24 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
       <div id="rec-dot"></div>
     </div>
 
+    <!-- FIX: Eigene Reg Zeile für OGN Background-Tracking -->
+    <div id="flight-reg-row">
+      <span class="flight-reg-lbl">Meine Reg</span>
+      <input
+        class="flight-reg-input"
+        id="flight-own-reg"
+        placeholder="D-KXXX"
+        maxlength="8"
+        onkeydown="if(event.key==='Enter') saveOwnReg()"
+      />
+      <button class="flight-reg-save" onclick="saveOwnReg()">SPEICHERN</button>
+      <span class="flight-reg-saved" id="flight-reg-status">—</span>
+      <div class="flight-bg-badge" id="flight-bg-badge" style="display:none">
+        <div class="dot"></div>
+        <span id="flight-bg-label">OGN</span>
+      </div>
+    </div>
+
     <div id="flight-nav">
       <button class="nav-btn active" onclick="switchTab('flight')" id="nav-flight"><span class="nav-icon">◉</span>FLIGHT</button>
       <button class="nav-btn" onclick="switchTab('tt')" id="nav-tt"><span class="nav-icon">◈</span>ANALYSE</button>
@@ -927,7 +1062,6 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
 
     <div class="panel active" id="panel-flight">
       <div class="gps-err" id="gps-err">GPS-Zugriff verweigert — Einstellungen öffnen</div>
-
       <div class="flight-scroll" id="flight-scroll">
         <div class="metric-card">
           <div class="metric-label">GS</div>
@@ -960,29 +1094,18 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
           <div class="metric-value" id="disp-pts">0</div>
           <div class="metric-unit">GPS punkte</div>
         </div>
-
         <div class="live-map-card">
           <div class="live-map-head">LIVE MAP</div>
           <button class="live-full-btn" id="live-full-btn" onclick="openFullscreenMap()">FULL MAP</button>
           <div class="live-wind-badge" id="live-wind">WIND --</div>
           <div id="live-map"></div>
           <div class="live-map-stats">
-            <div class="live-map-stat">
-              <div class="live-map-lbl">Distanz</div>
-              <div class="live-map-val acc" id="live-dist">0.0 KM</div>
-            </div>
-            <div class="live-map-stat">
-              <div class="live-map-lbl">Speed</div>
-              <div class="live-map-val" id="live-speed">0 KM/H</div>
-            </div>
-            <div class="live-map-stat">
-              <div class="live-map-lbl">Höhe</div>
-              <div class="live-map-val" id="live-alt">---</div>
-            </div>
+            <div class="live-map-stat"><div class="live-map-lbl">Distanz</div><div class="live-map-val acc" id="live-dist">0.0 KM</div></div>
+            <div class="live-map-stat"><div class="live-map-lbl">Speed</div><div class="live-map-val" id="live-speed">0 KM/H</div></div>
+            <div class="live-map-stat"><div class="live-map-lbl">Höhe</div><div class="live-map-val" id="live-alt">---</div></div>
           </div>
         </div>
       </div>
-
       <div class="flight-footer">
         <button class="perm-btn" id="motion-perm-btn" onclick="requestMotion()">⚡ MOTION-SENSOR AKTIVIEREN (iPhone)</button>
         <div class="status-row">
@@ -1090,9 +1213,8 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
   </div><!-- /screen-flight -->
 
 
-  <!-- ═══════════════════════ TRACKER SCREEN ═══════════════════════ -->
+  <!-- TRACKER SCREEN -->
   <div class="screen" id="screen-tracker">
-
     <div id="tracker-topbar">
       <button class="back-btn" onclick="goHome()">← HOME</button>
       <div class="tracker-logo">glide<span>TRACK</span></div>
@@ -1101,12 +1223,10 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
         <span id="ws-label">OFFLINE</span>
       </div>
     </div>
-
     <div id="tracker-body">
       <div id="tracker-map-wrap">
         <div id="tracker-map"></div>
       </div>
-
       <div id="tracker-sheet">
         <div class="sheet-handle" onclick="toggleSheet()">
           <span class="sheet-handle-title">Flugzeuge (<span id="sheet-count">0</span>)</span>
@@ -1129,13 +1249,12 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
         </div>
       </div>
     </div>
-
   </div><!-- /screen-tracker -->
 
 </div><!-- /app -->
 
 
-<!-- FULLSCREEN MAP OVERLAY (for flight mode) -->
+<!-- FULLSCREEN MAP OVERLAY -->
 <div id="fullscreen-map-overlay">
   <div id="fullscreen-map"></div>
   <button class="fs-exit" onclick="closeFullscreenMap()">EXIT MAP</button>
@@ -1188,11 +1307,9 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
 /* ═══════════════════════════════════════════════
    CONFIG
 ═══════════════════════════════════════════════ */
-// WS_URL wird automatisch von /api/config geladen (Vercel env var WS_URL)
 let WS_URL = '';
 fetch('/api/config').then(r => r.json()).then(d => {
   WS_URL = d.wsUrl || '';
-  // falls tracker screen schon offen: direkt verbinden
   if (currentScreen === 'tracker') connectWS();
 }).catch(() => { WS_URL = ''; });
 
@@ -1205,12 +1322,12 @@ function enterMode(mode) {
   document.getElementById('screen-' + currentScreen).classList.remove('active');
   currentScreen = mode;
   document.getElementById('screen-' + mode).classList.add('active');
-
   if (mode === 'flight') {
     setTimeout(() => {
       initLiveMap();
       if (liveMapReady && liveMap) liveMap.invalidateSize();
       primeGPSOnce();
+      loadOwnReg();
     }, 100);
   }
   if (mode === 'tracker') {
@@ -1228,82 +1345,158 @@ function goHome() {
 }
 
 /* ═══════════════════════════════════════════════
-   HOME BG ANIMATION
+   HOME BG
 ═══════════════════════════════════════════════ */
 (function() {
   const canvas = document.getElementById('home-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  let W, H, dots = [], raf;
-
-  function resize() {
-    W = canvas.width = canvas.offsetWidth * devicePixelRatio;
-    H = canvas.height = canvas.offsetHeight * devicePixelRatio;
-  }
-
+  let W, H, dots = [];
+  function resize() { W = canvas.width = canvas.offsetWidth * devicePixelRatio; H = canvas.height = canvas.offsetHeight * devicePixelRatio; }
   function initDots() {
-    dots = Array.from({ length: 55 }, () => ({
-      x: Math.random() * W,
-      y: Math.random() * H,
-      r: Math.random() * 1.5 + 0.4,
-      vx: (Math.random() - 0.5) * 0.4,
-      vy: (Math.random() - 0.5) * 0.4,
-      alpha: Math.random() * 0.5 + 0.1
-    }));
+    dots = Array.from({ length: 55 }, () => ({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.5 + 0.4, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, alpha: Math.random() * 0.5 + 0.1 }));
   }
-
   function draw() {
     ctx.clearRect(0, 0, W, H);
     dots.forEach(d => {
       d.x += d.vx; d.y += d.vy;
-      if (d.x < 0) d.x = W;
-      if (d.x > W) d.x = 0;
-      if (d.y < 0) d.y = H;
-      if (d.y > H) d.y = 0;
-      ctx.beginPath();
-      ctx.arc(d.x, d.y, d.r * devicePixelRatio, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(34,197,94,${d.alpha})`;
-      ctx.fill();
+      if (d.x < 0) d.x = W; if (d.x > W) d.x = 0;
+      if (d.y < 0) d.y = H; if (d.y > H) d.y = 0;
+      ctx.beginPath(); ctx.arc(d.x, d.y, d.r * devicePixelRatio, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(34,197,94,${d.alpha})`; ctx.fill();
     });
-    // faint lines between close dots
     for (let i = 0; i < dots.length; i++) {
       for (let j = i + 1; j < dots.length; j++) {
         const dx = dots[i].x - dots[j].x, dy = dots[i].y - dots[j].y;
         const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist < W * 0.14) {
-          ctx.beginPath();
-          ctx.moveTo(dots[i].x, dots[i].y);
-          ctx.lineTo(dots[j].x, dots[j].y);
-          ctx.strokeStyle = `rgba(34,197,94,${0.06 * (1 - dist / (W * 0.14))})`;
-          ctx.lineWidth = devicePixelRatio * 0.5;
-          ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(dots[i].x, dots[i].y); ctx.lineTo(dots[j].x, dots[j].y);
+          ctx.strokeStyle = `rgba(34,197,94,${0.06 * (1 - dist / (W * 0.14))})`; ctx.lineWidth = devicePixelRatio * 0.5; ctx.stroke();
         }
       }
     }
-    raf = requestAnimationFrame(draw);
+    requestAnimationFrame(draw);
   }
-
   window.addEventListener('resize', () => { resize(); initDots(); });
   resize(); initDots(); draw();
 })();
 
 /* ═══════════════════════════════════════════════
+   FIX: EIGENE REG — OGN Background Tracking
+═══════════════════════════════════════════════ */
+let ownReg = '';
+let ownRegOgnWs = null;
+let ownRegOgnTimer = null;
+let ownRegLowSpeedStart = null;
+let ownRegLanded = false;
+
+function loadOwnReg() {
+  try {
+    const saved = localStorage.getItem('glideos_own_reg') || '';
+    if (saved) {
+      ownReg = saved;
+      const inp = document.getElementById('flight-own-reg');
+      const status = document.getElementById('flight-reg-status');
+      if (inp) inp.value = saved;
+      if (status) status.textContent = saved + ' gespeichert';
+    }
+  } catch(e) {}
+}
+
+function saveOwnReg() {
+  const inp = document.getElementById('flight-own-reg');
+  const status = document.getElementById('flight-reg-status');
+  const badge = document.getElementById('flight-bg-badge');
+  const val = (inp?.value || '').trim().toUpperCase();
+  if (!val) { showToast('Kein Kennzeichen eingegeben'); return; }
+  ownReg = val;
+  try { localStorage.setItem('glideos_own_reg', val); } catch(e) {}
+  if (status) status.textContent = val + ' aktiv';
+  showToast('Reg gespeichert: ' + val);
+  // OGN tracking starten wenn WS verfügbar
+  startOwnRegOgnTracking();
+}
+
+function startOwnRegOgnTracking() {
+  if (!WS_URL || !ownReg) return;
+  const badge = document.getElementById('flight-bg-badge');
+  const label = document.getElementById('flight-bg-label');
+  if (ownRegOgnWs) { ownRegOgnWs.onclose = null; ownRegOgnWs.close(); }
+
+  ownRegOgnWs = new WebSocket(WS_URL);
+  ownRegOgnWs.onopen = () => {
+    ownRegOgnWs.send(JSON.stringify({ type: 'subscribe', registrations: [ownReg] }));
+    if (badge) badge.style.display = 'flex';
+    if (label) label.textContent = 'OGN · ' + ownReg;
+    ownRegLanded = false;
+    ownRegLowSpeedStart = null;
+  };
+
+  ownRegOgnWs.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'position' && msg.data) {
+        const pos = msg.data;
+        // Auto-stop detection: speed < 10 km/h für 30s = gelandet
+        checkOgnLanding(pos);
+      }
+    } catch(err) {}
+  };
+
+  ownRegOgnWs.onclose = () => {
+    // Reconnect nach 5s wenn noch nicht gelandet
+    if (!ownRegLanded) {
+      clearTimeout(ownRegOgnTimer);
+      ownRegOgnTimer = setTimeout(startOwnRegOgnTracking, 5000);
+    }
+  };
+  ownRegOgnWs.onerror = () => {};
+}
+
+function checkOgnLanding(pos) {
+  const badge = document.getElementById('flight-bg-badge');
+  const label = document.getElementById('flight-bg-label');
+  const spd = pos.speedKmh != null ? pos.speedKmh : 999;
+
+  if (spd < 10) {
+    if (!ownRegLowSpeedStart) ownRegLowSpeedStart = Date.now();
+    const lowSpeedDur = (Date.now() - ownRegLowSpeedStart) / 1000;
+    if (label) label.textContent = 'Landung? ' + Math.round(lowSpeedDur) + 's';
+
+    if (lowSpeedDur >= 30 && !ownRegLanded) {
+      ownRegLanded = true;
+      if (badge) badge.classList.add('landed');
+      if (label) label.textContent = 'GELANDET';
+      showToast('🛬 ' + ownReg + ' hat gelandet');
+      // Flugaufzeichnung stoppen falls aktiv
+      if (isRecording) toggleRecording();
+      // OGN WS schließen
+      if (ownRegOgnWs) { ownRegOgnWs.onclose = null; ownRegOgnWs.close(); }
+    }
+  } else {
+    ownRegLowSpeedStart = null;
+    if (badge && !ownRegLanded) badge.classList.remove('landed');
+    if (label && !ownRegLanded) label.textContent = 'OGN · ' + ownReg;
+  }
+}
+
+/* ═══════════════════════════════════════════════
    TRACKER — WEBSOCKET
 ═══════════════════════════════════════════════ */
 const TRACKER_KEY = 'glideos_tracker_regs';
-let trackerRegs = [];  // ['D-KXXX', 'WA', ...]
-let trackerPositions = {}; // hexId -> latest position
-let trackerResolved = []; // [{registration, hexId, info}]
+let trackerRegs = [];
+let trackerPositions = {};
+let trackerResolved = [];
 let ws = null;
 let wsStatus = 'disconnected';
 let wsReconnectTimer = null;
 let trackerMapReady = false;
 let trackerMap = null;
-let trackerMarkers = {}; // hexId -> { marker, line, latLngs }
+let trackerMarkers = {};
 let sheetCollapsed = false;
-let ageInterval = null;
+// FIX: selectedGlider für border highlight
+let selectedGliderHex = null;
 
-// Colors per glider slot
 const GLIDER_COLORS = ['#38bdf8','#22c55e','#fbbf24','#ef5350','#a78bfa','#f472b6'];
 
 function loadTrackerRegs() {
@@ -1317,47 +1510,24 @@ function saveTrackerRegs() {
 function connectWS() {
   if (ws) { ws.onclose = null; ws.close(); ws = null; }
   clearTimeout(wsReconnectTimer);
-
   if (!WS_URL || WS_URL.includes('YOUR-BACKEND')) {
-    setWsBadge('err', 'NO URL');
-    showToast('WS_URL nicht konfiguriert');
-    return;
+    setWsBadge('err', 'NO URL'); showToast('WS_URL nicht konfiguriert'); return;
   }
-
   setWsBadge('connecting', 'VERBINDE');
   ws = new WebSocket(WS_URL);
-
   ws.onopen = () => {
-    wsStatus = 'connected';
-    setWsBadge('live', 'LIVE');
-    // Direkt subscriben mit aktuellen registrierungen
-    if (trackerRegs.length > 0) {
-      ws.send(JSON.stringify({ type: 'subscribe', registrations: trackerRegs }));
-    }
+    wsStatus = 'connected'; setWsBadge('live', 'LIVE');
+    if (trackerRegs.length > 0) ws.send(JSON.stringify({ type: 'subscribe', registrations: trackerRegs }));
   };
-
   ws.onmessage = (e) => {
     try {
       const msg = JSON.parse(e.data);
-      if (msg.type === 'position') {
-        handlePositionUpdate(msg.data);
-      } else if (msg.type === 'subscribed') {
-        trackerResolved = msg.resolved || [];
-        renderTrackerList();
-      }
+      if (msg.type === 'position') handlePositionUpdate(msg.data);
+      else if (msg.type === 'subscribed') { trackerResolved = msg.resolved || []; renderTrackerList(); }
     } catch(err) {}
   };
-
-  ws.onclose = () => {
-    wsStatus = 'disconnected';
-    setWsBadge('', 'OFFLINE');
-    wsReconnectTimer = setTimeout(connectWS, 4000);
-  };
-
-  ws.onerror = () => {
-    wsStatus = 'error';
-    setWsBadge('err', 'FEHLER');
-  };
+  ws.onclose = () => { wsStatus = 'disconnected'; setWsBadge('', 'OFFLINE'); wsReconnectTimer = setTimeout(connectWS, 4000); };
+  ws.onerror = () => { wsStatus = 'error'; setWsBadge('err', 'FEHLER'); };
 }
 
 function setWsBadge(cls, label) {
@@ -1369,9 +1539,7 @@ function setWsBadge(cls, label) {
 }
 
 function resubscribe() {
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: 'subscribe', registrations: trackerRegs }));
-  }
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'subscribe', registrations: trackerRegs }));
 }
 
 function addGlider() {
@@ -1389,18 +1557,15 @@ function addGlider() {
 function removeGlider(reg) {
   trackerRegs = trackerRegs.filter(r => r !== reg);
   saveTrackerRegs();
-  // Marker entfernen
   const resolved = trackerResolved.find(d => d.registration === reg);
   if (resolved?.hexId) {
     const m = trackerMarkers[resolved.hexId];
     if (m) {
-      if (trackerMapReady) {
-        if (m.marker) trackerMap.removeLayer(m.marker);
-        if (m.line) trackerMap.removeLayer(m.line);
-      }
+      if (trackerMapReady) { if (m.marker) trackerMap.removeLayer(m.marker); if (m.line) trackerMap.removeLayer(m.line); }
       delete trackerMarkers[resolved.hexId];
     }
     delete trackerPositions[resolved.hexId];
+    if (selectedGliderHex === resolved.hexId) selectedGliderHex = null;
   }
   resubscribe();
   renderTrackerList();
@@ -1408,23 +1573,19 @@ function removeGlider(reg) {
 
 function handlePositionUpdate(pos) {
   if (!pos || !pos.hexId) return;
-  // Position älter als 5min ignorieren
   if (Date.now() - pos.ts > 5 * 60 * 1000) return;
-
   trackerPositions[pos.hexId] = pos;
-
   if (!trackerMapReady) return;
-
   const colorIdx = Object.keys(trackerMarkers).indexOf(pos.hexId);
   const color = GLIDER_COLORS[colorIdx >= 0 ? colorIdx % GLIDER_COLORS.length : Object.keys(trackerMarkers).length % GLIDER_COLORS.length];
-
   if (!trackerMarkers[pos.hexId]) {
-    // Neu anlegen
     const line = L.polyline([], { color, weight: 2, opacity: 0.7, dashArray: '4 4' }).addTo(trackerMap);
     const icon = createGliderIcon(pos.course || 0, color);
     const marker = L.marker([pos.lat, pos.lon], { icon })
       .addTo(trackerMap)
-      .bindPopup(() => buildPopupContent(pos.hexId));
+      .bindPopup(() => buildPopupContent(pos.hexId), { className: 'glide-popup', closeButton: false, maxWidth: 220 });
+    // FIX: Popup öffnen → karte focussen + card highlighten
+    marker.on('click', () => selectGlider(pos.hexId));
     trackerMarkers[pos.hexId] = { marker, line, latLngs: [[pos.lat, pos.lon]], color };
   } else {
     const m = trackerMarkers[pos.hexId];
@@ -1433,28 +1594,39 @@ function handlePositionUpdate(pos) {
     m.latLngs.push([pos.lat, pos.lon]);
     if (m.latLngs.length > 300) m.latLngs.shift();
     m.line.setLatLngs(m.latLngs);
+    // offenes popup updaten
+    if (m.marker.isPopupOpen()) m.marker.getPopup().setContent(buildPopupContent(pos.hexId));
   }
-
   renderTrackerList();
+}
+
+// FIX: selectGlider — highlight card + popup
+function selectGlider(hexId) {
+  selectedGliderHex = hexId;
+  renderTrackerList();
+  // karte zentrieren
+  const pos = trackerPositions[hexId];
+  if (pos && trackerMapReady) trackerMap.panTo([pos.lat, pos.lon], { animate: true, duration: 0.5 });
 }
 
 function buildPopupContent(hexId) {
   const pos = trackerPositions[hexId];
-  if (!pos) return '<div style="font-family:monospace">Kein Fix</div>';
+  if (!pos) return '<div style="padding:12px;font-family:monospace;color:#777">Kein Fix</div>';
   const age = Math.round((Date.now() - pos.ts) / 1000);
   const ageStr = age < 60 ? `${age}s` : `${Math.round(age/60)}min`;
   return `
-    <div style="font-family:'DM Mono',monospace;color:#f0f0f0;background:#1c1c1c;border-radius:8px;padding:2px;min-width:160px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#38bdf8;border-bottom:1px solid #333;padding-bottom:4px;margin-bottom:6px">
-        ${pos.registration || hexId}${pos.cn ? ` <span style="font-size:11px;color:#666">${pos.cn}</span>` : ''}
+    <div style="padding:12px 14px;min-width:170px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#38bdf8;border-bottom:1px solid #2a2a2a;padding-bottom:5px;margin-bottom:7px;display:flex;align-items:center;gap:6px">
+        ${pos.registration || hexId}
+        ${pos.cn ? `<span style="font-family:'DM Mono',monospace;font-size:10px;color:#555;background:#181818;padding:2px 6px;border-radius:4px">${pos.cn}</span>` : ''}
       </div>
-      ${pos.model ? `<div style="color:#555;font-size:10px;margin-bottom:4px">${pos.model}</div>` : ''}
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px">
-        <div>Höhe</div><div style="text-align:right"><b>${pos.altM != null ? pos.altM + ' m' : '—'}</b></div>
-        <div>Speed</div><div style="text-align:right"><b>${pos.speedKmh != null ? pos.speedKmh + ' km/h' : '—'}</b></div>
-        <div>Kurs</div><div style="text-align:right"><b>${pos.course != null ? pos.course + '°' : '—'}</b></div>
-        ${pos.varioMs != null ? `<div>Vario</div><div style="text-align:right;color:${pos.varioMs > 0 ? '#22c55e' : '#38bdf8'}"><b>${pos.varioMs > 0 ? '+' : ''}${pos.varioMs} m/s</b></div>` : ''}
-        <div style="color:#444">vor</div><div style="text-align:right;color:#444">${ageStr}</div>
+      ${pos.model ? `<div style="font-family:'DM Mono',monospace;color:#444;font-size:9px;margin-bottom:7px;font-style:italic">${pos.model}</div>` : ''}
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-family:'DM Mono',monospace;font-size:10px;align-items:center">
+        <span style="color:#555">Höhe</span><span style="color:#f0f0f0;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">${pos.altM != null ? pos.altM + ' m' : '—'}</span>
+        <span style="color:#555">Speed</span><span style="color:#f0f0f0;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">${pos.speedKmh != null ? pos.speedKmh + ' km/h' : '—'}</span>
+        <span style="color:#555">Kurs</span><span style="color:#f0f0f0;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">${pos.course != null ? pos.course + '°' : '—'}</span>
+        ${pos.varioMs != null ? `<span style="color:#555">Vario</span><span style="color:${pos.varioMs > 0 ? '#22c55e' : '#38bdf8'};text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">${pos.varioMs > 0 ? '+' : ''}${pos.varioMs} m/s</span>` : ''}
+        <span style="color:#333">vor</span><span style="color:#333;text-align:right">${ageStr}</span>
       </div>
     </div>
   `;
@@ -1472,9 +1644,13 @@ function createGliderIcon(course, color) {
 }
 
 function focusGlider(hexId) {
+  selectGlider(hexId);
   const pos = trackerPositions[hexId];
   if (!pos || !trackerMapReady) return;
   trackerMap.flyTo([pos.lat, pos.lon], 13, { duration: 0.8 });
+  // Popup öffnen
+  const m = trackerMarkers[hexId];
+  if (m && m.marker) m.marker.openPopup();
 }
 
 function renderTrackerList() {
@@ -1482,17 +1658,13 @@ function renderTrackerList() {
   const empty = document.getElementById('tracker-empty');
   const count = document.getElementById('sheet-count');
   if (!list) return;
-
   count.textContent = trackerRegs.length;
-
   if (trackerRegs.length === 0) {
     empty.style.display = '';
     list.querySelectorAll('.glider-card').forEach(el => el.remove());
     return;
   }
   empty.style.display = 'none';
-
-  // Rebuild cards
   list.querySelectorAll('.glider-card').forEach(el => el.remove());
 
   trackerRegs.forEach((reg, i) => {
@@ -1502,10 +1674,14 @@ function renderTrackerList() {
     const info = resolved?.info;
     const pos = hexId ? trackerPositions[hexId] : null;
     const age = pos ? Math.round((Date.now() - pos.ts) / 1000) : null;
+    // FIX: selected state
+    const isSelected = hexId && selectedGliderHex === hexId;
 
     const card = document.createElement('div');
-    card.className = 'glider-card ' + (pos ? 'has-fix' : hexId ? 'no-fix' : 'not-found');
+    card.className = 'glider-card ' + (pos ? 'has-fix' : hexId ? 'no-fix' : 'not-found') + (isSelected ? ' selected' : '');
     card.style.setProperty('--card-color', color);
+    // FIX: card tap → select + map focus
+    if (hexId) card.addEventListener('click', (e) => { if (!e.target.closest('.gc-remove') && !e.target.closest('.gc-focus')) selectGlider(hexId); });
 
     let liveHtml = '';
     if (!hexId) {
@@ -1556,31 +1732,23 @@ function toggleSheet() {
   setTimeout(() => { if (trackerMapReady && trackerMap) trackerMap.invalidateSize(); }, 200);
 }
 
-// Age ticker
-setInterval(() => {
-  if (currentScreen === 'tracker') renderTrackerList();
-}, 5000);
+setInterval(() => { if (currentScreen === 'tracker') renderTrackerList(); }, 5000);
 
 function initTrackerMap() {
   if (trackerMapReady || typeof L === 'undefined') return;
   const el = document.getElementById('tracker-map');
   if (!el) return;
-
-  trackerMap = L.map(el, {
-    zoomControl: true,
-    attributionControl: false,
-    dragging: true,
-    tap: true,
-    scrollWheelZoom: true
-  });
+  trackerMap = L.map(el, { zoomControl: true, attributionControl: false, dragging: true, tap: true, scrollWheelZoom: true });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, crossOrigin: true }).addTo(trackerMap);
   trackerMap.setView([48.5, 9.0], 8);
+  // FIX: Klick auf Karte = deselect
+  trackerMap.on('click', () => { selectedGliderHex = null; renderTrackerList(); });
   trackerMapReady = true;
   setTimeout(() => trackerMap.invalidateSize(), 300);
 }
 
 /* ═══════════════════════════════════════════════
-   ALL ORIGINAL GLIDE OS FLIGHT LOGIC
+   FLIGHT LOGIC (original, unverändert)
 ═══════════════════════════════════════════════ */
 const AC = {
   ASK13: { name: 'ASK 13', circleSpd: 72, glide: 27 },
@@ -1656,10 +1824,7 @@ function bearingDeg(la1, lo1, la2, lo2) {
   return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
 }
 
-function hdgDiff(h1, h2) {
-  let d = Math.abs(h1 - h2) % 360;
-  return d > 180 ? 360 - d : d;
-}
+function hdgDiff(h1, h2) { let d = Math.abs(h1 - h2) % 360; return d > 180 ? 360 - d : d; }
 
 function smoothVario(alt, ts) {
   if (alt == null || !Number.isFinite(alt)) return null;
@@ -1679,8 +1844,7 @@ function updateVarioDisplay(v) {
   const center = outerH / 2;
   if (v == null || !Number.isFinite(v)) {
     el.textContent = '---'; el.style.color = 'var(--text)';
-    fill.style.height = '2px'; fill.style.top = (center - 1) + 'px'; fill.style.background = 'var(--border)';
-    return;
+    fill.style.height = '2px'; fill.style.top = (center - 1) + 'px'; fill.style.background = 'var(--border)'; return;
   }
   el.textContent = (v >= 0 ? '+' : '') + v.toFixed(1);
   el.style.color = v > 0.3 ? 'var(--acc)' : v < -0.3 ? 'var(--blue)' : 'var(--text)';
@@ -1719,9 +1883,7 @@ function updateLabValues() {
     const brg = Math.round(bearingDeg(fix.lat, fix.lon, homeFix.lat, homeFix.lon));
     setText('lab-home', dist.toFixed(1) + ' km');
     setText('lab-home-sub', brg + '° zurück');
-  } else {
-    setText('lab-home', '--'); setText('lab-home-sub', 'startplatz marker');
-  }
+  } else { setText('lab-home', '--'); setText('lab-home-sub', 'startplatz marker'); }
   setText('lab-thermal', detectThermalText());
 }
 
@@ -1783,7 +1945,6 @@ function openFullscreenMap() {
   document.getElementById('fullscreen-map-overlay').classList.add('show');
   setTimeout(() => { if (fullscreenMapReady && fullscreenMap) fullscreenMap.invalidateSize(); syncFullscreenMap(); }, 180);
 }
-
 function closeFullscreenMap() { document.getElementById('fullscreen-map-overlay').classList.remove('show'); }
 
 function syncFullscreenMap() {
@@ -1800,8 +1961,7 @@ function syncFullscreenMap() {
   setText('fs-vario', displayVario != null ? ((displayVario >= 0 ? '+' : '') + displayVario.toFixed(1)) : '---');
   setText('fs-time', document.getElementById('disp-time').textContent);
   setText('fs-status-text', 'GPS OK · ' + fix.lat.toFixed(4) + ',' + fix.lon.toFixed(4));
-  const fsWind = document.getElementById('fs-wind');
-  const liveWind = document.getElementById('live-wind');
+  const fsWind = document.getElementById('fs-wind'), liveWind = document.getElementById('live-wind');
   if (fsWind && liveWind) fsWind.textContent = liveWind.textContent || 'WIND --';
   const fsStart = document.getElementById('fs-start-btn');
   if (fsStart) { fsStart.textContent = isRecording ? '■ STOPP' : 'START'; fsStart.classList.toggle('recording', isRecording); }
@@ -1828,13 +1988,9 @@ function startGPS() {
 
 function onGPSErr(e) {
   gpsStarted = false;
-  if (e.code === e.PERMISSION_DENIED) {
-    const errEl = document.getElementById('gps-err');
-    if (errEl) errEl.classList.add('show');
-    setStatus('GPS verweigert', 'err');
-  } else if (e.code === e.TIMEOUT) {
-    setStatus('GPS Timeout', 'search'); primeGPSOnce();
-  } else { setStatus('GPS Fehler: ' + e.message, 'err'); }
+  if (e.code === e.PERMISSION_DENIED) { const errEl = document.getElementById('gps-err'); if (errEl) errEl.classList.add('show'); setStatus('GPS verweigert', 'err'); }
+  else if (e.code === e.TIMEOUT) { setStatus('GPS Timeout', 'search'); primeGPSOnce(); }
+  else { setStatus('GPS Fehler: ' + e.message, 'err'); }
 }
 
 function onGPS(pos) {
@@ -1981,6 +2137,8 @@ function toggleRecording() {
     if (ttRec) ttRec.style.display = 'flex';
     clearInterval(timerIv); timerIv = setInterval(updateTimer, 1000); updateTimer();
     showToast('Aufzeichnung gestartet');
+    // OGN background tracking starten wenn reg vorhanden
+    if (ownReg && WS_URL) startOwnRegOgnTracking();
   } else {
     isRecording = false; clearInterval(timerIv);
     const sb = document.getElementById('start-btn');
@@ -2072,10 +2230,7 @@ function startMotion() {
     setText('lab-ax', gx); setText('lab-ay', gy); setText('lab-az', gz);
   });
   window.addEventListener('deviceorientation', (e) => {
-    if (e.beta != null) {
-      const pitch = (e.beta||0).toFixed(1), roll = (e.gamma||0).toFixed(1);
-      setText('lab-pitch', pitch + '°'); setText('lab-roll', roll + '°');
-    }
+    if (e.beta != null) { setText('lab-pitch', (e.beta||0).toFixed(1) + '°'); setText('lab-roll', (e.gamma||0).toFixed(1) + '°'); }
   });
 }
 
@@ -2305,6 +2460,7 @@ function fmtDur(s) { const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), 
 loadTrack();
 loadHome();
 loadTrackerRegs();
+loadOwnReg();
 selectAC(selectedAC, true);
 checkMotionPermission();
 renderTrackerList();
