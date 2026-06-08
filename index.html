@@ -2165,84 +2165,130 @@ function analyzeTrack() {
     const p1 = track[i-1], p2 = track[i];
     const d = haversine(p1.lat, p1.lon, p2.lat, p2.lon); dist += d;
     if (p2.alt > maxAlt) maxAlt = p2.alt;
-    const v = p2.vario;
-    const color = v > 0.4 ? '#ef5350' : v < -0.6 ? '#38bdf8' : '#444';
-    ttLayers.push(L.polyline([[p1.lat, p1.lon], [p2.lat, p2.lon]], { color, weight: 4 }).addTo(ttMap));
-    if (v > 0.3) { climbSecs += (p2.ts - p1.ts)/1000; if (!curClimb) curClimb = { start: p1.ts, startAlt: p1.alt, maxV: v }; else curClimb.maxV = Math.max(curClimb.maxV, v); }
-    else if (curClimb) { curClimb.end = p1.ts; curClimb.endAlt = p1.alt; climbs.push(curClimb); curClimb = null; }
+    if (p2.vario > 0.3) {
+      climbSecs += (p2.ts - p1.ts) / 1000;
+      if (!curClimb) { curClimb = { start: p1.ts, alt: p1.alt, points: [p1] }; climbs.push(curClimb); }
+      curClimb.points.push(p2);
+    } else { curClimb = null; }
+    
+    const color = p2.vario > 0.3 ? '#ef5350' : p2.vario < -0.3 ? '#38bdf8' : '#444';
+    const line = L.polyline([[p1.lat, p1.lon], [p2.lat, p2.lon]], { color, weight: 3, opacity: 0.8 }).addTo(ttMap);
+    ttLayers.push(line);
   }
-  const avgClimb = climbs.length ? climbs.reduce((a,c) => a + (c.endAlt - c.startAlt), 0) / climbSecs : 0;
-  const maxClimb = climbs.length ? Math.max(...climbs.map(c => c.maxV)) : 0;
-  setText('st-dur', Math.round(totalSecs/60) + ' min');
-  setText('st-dist', (dist/1000).toFixed(1) + ' km');
-  setText('st-alt', Math.round(maxAlt) + ' m');
-  setText('st-thpct', Math.round(climbSecs/totalSecs*100) + '%');
-  setText('st-avgc', avgClimb.toFixed(1) + ' m/s');
-  setText('st-maxc', maxClimb.toFixed(1) + ' m/s');
-  const bounds = L.polyline(track.map(p => [p.lat, p.lon])).getBounds();
-  ttMap.fitBounds(bounds, { padding: [20, 20] });
+  
+  if (track.length > 0) ttMap.fitBounds(L.polyline(track.map(p => [p.lat, p.lon])).getBounds());
+  
+  const avgClimb = climbs.length ? climbs.reduce((s, c) => s + (c.points[c.points.length-1].alt - c.points[0].alt), 0) / climbSecs : 0;
+  let maxC = 0; track.forEach(p => { if (p.vario > maxC) maxC = p.vario; });
+
+  document.getElementById('st-dur').textContent = pad(Math.floor(totalSecs / 3600)) + ':' + pad(Math.floor((totalSecs % 3600) / 60)) + ':' + pad(Math.floor(totalSecs % 60));
+  document.getElementById('st-dist').textContent = (dist / 1000).toFixed(1) + ' km';
+  document.getElementById('st-alt').textContent = Math.round(maxAlt) + ' m';
+  document.getElementById('st-thpct').textContent = Math.round((climbSecs / totalSecs) * 100) + '%';
+  document.getElementById('st-avgc').textContent = avgClimb.toFixed(1) + ' m/s';
+  document.getElementById('st-maxc').textContent = maxC.toFixed(1) + ' m/s';
 }
 
 function refreshStory() {
-  loadTrack();
-  const date = track.length ? new Date(track[0].ts).toLocaleDateString('de-DE') : '--.--.----';
-  setText('s-date', date);
-  setText('s-ac', AC_DEFS[selectedAC].name);
-  let dist = 0, altGain = 0;
+  const ac = AC_DEFS[selectedAC] || AC_DEFS.ASK13;
+  document.getElementById('s-ac').textContent = ac.name;
+  document.getElementById('s-date').textContent = new Date().toLocaleDateString('de-DE');
+  
+  let dist = 0, gain = 0;
   for (let i = 1; i < track.length; i++) {
     dist += haversine(track[i-1].lat, track[i-1].lon, track[i].lat, track[i].lon);
-    if (track[i].alt > track[i-1].alt) altGain += (track[i].alt - track[i-1].alt);
+    const da = track[i].alt - track[i-1].alt;
+    if (da > 0) gain += da;
   }
-  setText('s-dist', (dist/1000).toFixed(1));
-  setText('s-altgain', Math.round(altGain));
-  const dur = track.length ? (track[track.length-1].ts - track[0].ts) : 0;
-  const s = Math.floor(dur/1000);
-  setText('s-dur', pad(Math.floor(s/3600)) + ':' + pad(Math.floor((s%3600)/60)) + ':' + pad(s%60));
-  setText('s-glide', '1:' + (altGain > 100 ? Math.round(dist/altGain) : '--'));
+  
+  const durS = track.length > 0 ? (track[track.length-1].ts - track[0].ts) / 1000 : 0;
+  const glide = dist > 0 && gain < 0 ? Math.round(dist / Math.abs(gain)) : '--';
+
+  document.getElementById('s-dist').textContent = (dist / 1000).toFixed(1);
+  document.getElementById('s-dur').textContent = pad(Math.floor(durS / 3600)) + ':' + pad(Math.floor((durS % 3600) / 60)) + ':' + pad(Math.floor(durS % 60));
+  document.getElementById('s-glide').textContent = '1:' + glide;
+  document.getElementById('s-altgain').textContent = Math.round(gain);
+
   drawStoryTrack();
 }
 
 function drawStoryTrack() {
   const canvas = document.getElementById('s-track-canvas');
-  if (!canvas || !track.length) return;
+  if (!canvas || track.length < 2) return;
   const ctx = canvas.getContext('2d');
-  const W = canvas.width = canvas.offsetWidth * 2, H = canvas.height = canvas.offsetHeight * 2;
-  ctx.clearRect(0, 0, W, H);
+  const w = canvas.width = canvas.offsetWidth * 2;
+  const h = canvas.height = canvas.offsetHeight * 2;
+  ctx.clearRect(0, 0, w, h);
+  
   const lats = track.map(p => p.lat), lons = track.map(p => p.lon);
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats), minLon = Math.min(...lons), maxLon = Math.max(...lons);
-  const dLat = maxLat - minLat, dLon = maxLon - minLon, aspect = dLon / dLat || 1;
-  const pad = 40;
-  const scale = Math.min((W-2*pad)/dLon, (H-2*pad)/dLat);
-  const ox = (W - dLon*scale)/2, oy = (H - dLat*scale)/2;
-  ctx.beginPath(); ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 6; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+  const dLat = maxLat - minLat, dLon = maxLon - minLon;
+  const scale = Math.min((w - 40) / dLon, (h - 40) / dLat);
+  
+  ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.beginPath();
   track.forEach((p, i) => {
-    const x = ox + (p.lon - minLon) * scale, y = H - (oy + (p.lat - minLat) * scale);
+    const x = 20 + (p.lon - minLon) * scale;
+    const y = h - (20 + (p.lat - minLat) * scale);
     if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
   });
   ctx.stroke();
 }
 
-function toggleStoryMap() { storyMapMode = !storyMapMode; document.getElementById('story-map-btn').textContent = storyMapMode ? 'MAP AN' : 'MAP AUS'; saveTrack(); }
-function exportStory() { showToast('Exportiere PNG…'); html2canvas(document.getElementById('story-frame')).then(c => { const a = document.createElement('a'); a.href = c.toDataURL(); a.download = 'glideOS-story.png'; a.click(); }); }
-function exportStoryTransparent() { showToast('Exportiere PNG…'); const f = document.getElementById('story-frame'); const bg = f.style.background; f.style.background = 'transparent'; f.style.borderColor = 'transparent'; html2canvas(f, { backgroundColor: null }).then(c => { f.style.background = bg; f.style.borderColor = ''; const a = document.createElement('a'); a.href = c.toDataURL(); a.download = 'glideOS-story-trans.png'; a.click(); }); }
-function downloadIGC() {
-  if (!track.length) return;
-  let igc = "HFDTE" + new Date(track[0].ts).toISOString().slice(2,10).replace(/-/g,'') + "\\nHFPLTPILOTIN: glideOS USER\\nHFGTYGLIDER: " + AC_DEFS[selectedAC].name + "\\n";
-  track.forEach(p => { const d = new Date(p.ts); igc += "B" + d.toISOString().slice(11,19).replace(/:/g,'') + "0000000N0000000E" + (p.alt != null ? "A" + pad(Math.round(p.alt), 5) : "V00000") + "\\n"; });
-  const blob = new Blob([igc], { type: 'text/plain' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'flight.igc'; a.click();
+function exportStory() {
+  const frame = document.getElementById('story-frame');
+  html2canvas(frame, { backgroundColor: '#000', scale: 2 }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = 'glideOS-Story.png';
+    link.href = canvas.toDataURL();
+    link.click();
+  });
 }
 
-function exportTelemetryOverlay() { showToast('Telemetry Export nicht implementiert'); }
+function downloadIGC() {
+  if (track.length < 2) { showToast('Kein Track zum Exportieren'); return; }
+  const date = new Date(track[0].ts);
+  const dateStr = date.toISOString().slice(2, 10).replace(/-/g, '');
+  let igc = 'HFDTE' + dateStr + '\r\n';
+  igc += 'HFPLTPILOTINCHARGE: glideOS User\r\n';
+  igc += 'HFGTYGLIDERTYPE: ' + selectedAC + '\r\n';
+  
+  track.forEach(p => {
+    const t = new Date(p.ts).toISOString().slice(11, 19).replace(/:/g, '');
+    const lat = Math.abs(p.lat).toFixed(5).replace('.', '') + (p.lat >= 0 ? 'N' : 'S');
+    const lon = Math.abs(p.lon).toFixed(5).replace('.', '') + (p.lon >= 0 ? 'E' : 'W');
+    igc += 'B' + t + lat.padStart(7, '0') + lon.padStart(8, '0') + 'A' + Math.round(p.alt || 0).toString().padStart(5, '0') + Math.round(p.alt || 0).toString().padStart(5, '0') + '\r\n';
+  });
+  
+  const blob = new Blob([igc], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'flight-' + dateStr + '.igc';
+  a.click();
+}
 
-/* ═══════════════════════════════════════════════
-   INIT
-═══════════════════════════════════════════════ */
-window.addEventListener('load', () => {
-  loadTrack(); loadHome();
-  if (track.length) { refreshLiveMapFromTrack(); selectAC(selectedAC, true); updateTimer(); }
+function init() {
+  loadTrack();
+  loadHome();
   checkMotionPermission();
-});
+  const savedAC = localStorage.getItem('glideos_ac');
+  if (savedAC) selectAC(savedAC, true);
+  if (track.length > 0) {
+    const last = track[track.length - 1];
+    setTimeout(() => {
+      initLiveMap();
+      if (liveMapReady) {
+        track.forEach(p => updateLiveMap(p.lat, p.lon, p.alt, p.gs, p.hdg));
+        liveMap.setView([last.lat, last.lon], 13);
+      }
+    }, 500);
+  }
+}
+
+window.addEventListener('load', init);
+
 </script>
 </body>
 </html>
