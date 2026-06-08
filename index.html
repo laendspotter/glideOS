@@ -1561,7 +1561,7 @@ function removeGlider(reg) {
   if (resolved?.hexId) {
     const m = trackerMarkers[resolved.hexId];
     if (m) {
-      if (trackerMapReady) { if (m.marker) trackerMap.removeLayer(m.marker); if (m.line) trackerMap.removeLayer(m.line); }
+      if (trackerMapReady) { if (m.marker) trackerMap.removeLayer(m.marker); if (m.line) trackerMap.removeLayer(m.line); if (m.circle) trackerMap.removeLayer(m.circle); }
       delete trackerMarkers[resolved.hexId];
     }
     delete trackerPositions[resolved.hexId];
@@ -1586,7 +1586,8 @@ function handlePositionUpdate(pos) {
       .bindPopup(() => buildPopupContent(pos.hexId), { className: 'glide-popup', closeButton: false, maxWidth: 220 });
     // FIX: Popup öffnen → karte focussen + card highlighten
     marker.on('click', () => selectGlider(pos.hexId));
-    trackerMarkers[pos.hexId] = { marker, line, latLngs: [[pos.lat, pos.lon]], color };
+    const circle = pos.altM && pos.gleitzahl ? L.circle([pos.lat, pos.lon], { radius: pos.altM * pos.gleitzahl, color, weight: 1, opacity: 0.3, fillOpacity: 0.05 }).addTo(trackerMap) : null;
+    trackerMarkers[pos.hexId] = { marker, line, circle, latLngs: [[pos.lat, pos.lon]], color };
   } else {
     const m = trackerMarkers[pos.hexId];
     m.marker.setLatLng([pos.lat, pos.lon]);
@@ -1594,6 +1595,10 @@ function handlePositionUpdate(pos) {
     m.latLngs.push([pos.lat, pos.lon]);
     if (m.latLngs.length > 300) m.latLngs.shift();
     m.line.setLatLngs(m.latLngs);
+    if (pos.altM && pos.gleitzahl) {
+      if (!m.circle) m.circle = L.circle([pos.lat, pos.lon], { radius: pos.altM * pos.gleitzahl, color: m.color, weight: 1, opacity: 0.3, fillOpacity: 0.05 }).addTo(trackerMap);
+      else { m.circle.setLatLng([pos.lat, pos.lon]); m.circle.setRadius(pos.altM * pos.gleitzahl); }
+    } else if (m.circle) { trackerMap.removeLayer(m.circle); m.circle = null; }
     // offenes popup updaten
     if (m.marker.isPopupOpen()) m.marker.getPopup().setContent(buildPopupContent(pos.hexId));
   }
@@ -1914,10 +1919,11 @@ function loadHome() {
   try { const h = localStorage.getItem('glideos_home'); if (h) homeFix = JSON.parse(h); } catch(e) {}
 }
 
-function updateReachCircle(lat, lon, alt) {
+function updateReachCircle(lat, lon, alt, dynamicGlide) {
   const ac = AC[selectedAC] || AC.ASK13;
+  const glide = dynamicGlide || ac.glide;
   if (alt == null || !Number.isFinite(alt)) return;
-  const r = Math.max(0, alt * ac.glide);
+  const r = Math.max(0, alt * glide);
   if (liveMapReady && liveMap) {
     if (!reachCircle) reachCircle = L.circle([lat, lon], { radius: r, color: '#22c55e', weight: 1, opacity: 0.28, fillOpacity: 0.03 }).addTo(liveMap);
     else { reachCircle.setLatLng([lat, lon]); reachCircle.setRadius(r); }
@@ -1965,7 +1971,7 @@ function syncFullscreenMap() {
   if (fsWind && liveWind) fsWind.textContent = liveWind.textContent || 'WIND --';
   const fsStart = document.getElementById('fs-start-btn');
   if (fsStart) { fsStart.textContent = isRecording ? '■ STOPP' : 'START'; fsStart.classList.toggle('recording', isRecording); }
-  updateReachCircle(fix.lat, fix.lon, fix.alt);
+  updateReachCircle(fix.lat, fix.lon, fix.alt, fix.gleitzahl);
 }
 
 let gpsStarted = false, gpsPrimed = false;
@@ -2034,7 +2040,7 @@ function onGPS(pos) {
   if (recDot) recDot.className = isRecording ? 'rec' : 'gps';
   setStatus('GPS OK · ' + rawLat.toFixed(4) + ',' + rawLon.toFixed(4), 'on');
   updateLiveMap(lat, lon, alt, displayGs, hdg);
-  updateReachCircle(lat, lon, alt);
+  updateReachCircle(lat, lon, alt, latestFix?.gleitzahl);
   updateLabValues();
   syncFullscreenMap();
   if (isRecording) {
@@ -2275,204 +2281,4 @@ function analyzeTrack() {
     let k = Math.min(j, track.length);
     while (k < track.length) {
       let ha = 0, l = k + 1;
-      while (l < track.length && (track[l].ts - track[k].ts) / 1000 <= WINDOW_S) {
-        if (track[l-1].hdg != null && track[l].hdg != null) ha += hdgDiff(track[l-1].hdg, track[l].hdg);
-        l++;
-      }
-      if ((ha >= CIRCLE_DEG) !== isThermic) break;
-      k++;
-    }
-    const pts = track.slice(i, k);
-    const validV = pts.map(p => p.vario).filter(v => v != null && Number.isFinite(v));
-    const avgV = validV.length ? validV.reduce((s,v) => s + v, 0) / validV.length : 0;
-    segs.push({ pts, thermic: isThermic, avgV });
-    i = Math.max(i + 1, k - 1);
-    if (k >= track.length) break;
-  }
-  let totalDist = 0, maxAlt = -Infinity, thermTime = 0, totalTime = 0, climbRates = [];
-  const bounds = [];
-  segs.forEach(seg => {
-    if (seg.pts.length < 2) return;
-    const ll = seg.pts.map(p => [p.lat, p.lon]);
-    bounds.push(...ll);
-    let col, wt;
-    if (seg.thermic) { col = seg.avgV > 0 ? '#ef5350' : '#38bdf8'; wt = 4; } else { col = '#444'; wt = 2; }
-    const pl = L.polyline(ll, { color: col, weight: wt, opacity: 0.92 }).addTo(ttMap);
-    ttLayers.push(pl);
-    for (let x = 1; x < seg.pts.length; x++) {
-      totalDist += haversine(seg.pts[x-1].lat, seg.pts[x-1].lon, seg.pts[x].lat, seg.pts[x].lon);
-      if (seg.pts[x].alt != null) maxAlt = Math.max(maxAlt, seg.pts[x].alt);
-    }
-    const segDur = (seg.pts[seg.pts.length - 1].ts - seg.pts[0].ts) / 1000;
-    totalTime += segDur;
-    if (seg.thermic) { thermTime += segDur; const rise = seg.pts[0].alt != null && seg.pts[seg.pts.length-1].alt != null ? seg.pts[seg.pts.length-1].alt - seg.pts[0].alt : 0; if (rise > 0) climbRates.push(seg.avgV); }
-  });
-  const sm = L.circleMarker([track[0].lat, track[0].lon], { radius:5, color:'#22c55e', fillColor:'#22c55e', fillOpacity:1 }).addTo(ttMap);
-  const em = L.circleMarker([track[track.length-1].lat, track[track.length-1].lon], { radius:5, color:'#ef5350', fillColor:'#ef5350', fillOpacity:1 }).addTo(ttMap);
-  ttLayers.push(sm, em);
-  if (bounds.length > 0) ttMap.fitBounds(bounds, { padding: [30,30] });
-  const thermPct = totalTime > 0 ? Math.round(thermTime / totalTime * 100) : 0;
-  const avgC = climbRates.length ? (climbRates.reduce((a,b) => a + b, 0) / climbRates.length).toFixed(1) : '—';
-  const maxC = climbRates.length ? Math.max(...climbRates).toFixed(1) : '—';
-  setText('st-dur', fmtDur(totalTime)); setText('st-dist', (totalDist / 1000).toFixed(1) + 'km');
-  setText('st-alt', maxAlt > -Infinity ? Math.round(maxAlt) + 'm' : '—'); setText('st-thpct', thermPct + '%');
-  setText('st-avgc', avgC + ' m/s'); setText('st-maxc', maxC + ' m/s');
-  showToast('Analyse fertig');
-}
-
-function updateStoryMapButton() { const b = document.getElementById('story-map-btn'); if (b) b.textContent = storyMapMode ? 'MAP AN' : 'MAP AUS'; }
-function toggleStoryMap() { storyMapMode = !storyMapMode; updateStoryMapButton(); saveTrack(true); refreshStory(); }
-
-function refreshStory() {
-  loadTrack();
-  const ac = AC[selectedAC] || AC.ASK13;
-  setText('s-ac', ac.name); updateStoryMapButton();
-  if (!track || track.length < 2) {
-    setText('s-dist', '0.0'); setText('s-dur', '0:00'); setText('s-glide', '1:' + ac.glide); setText('s-altgain', '0'); setText('s-date', '--.--.----');
-    drawStoryTrack([]); return;
-  }
-  const d = new Date(track[0].ts);
-  setText('s-date', pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear());
-  let dist = 0, altGain = 0, glideDist = 0, glideDrop = 0;
-  for (let i = 1; i < track.length; i++) {
-    const dd = haversine(track[i-1].lat, track[i-1].lon, track[i].lat, track[i].lon);
-    const hasAlt = track[i].alt != null && track[i-1].alt != null;
-    const da = hasAlt ? track[i].alt - track[i-1].alt : 0;
-    dist += dd;
-    if (hasAlt && da > 0) altGain += da;
-    if (hasAlt && da < 0 && dd > 0) { glideDist += dd; glideDrop += Math.abs(da); }
-  }
-  const durS = (track[track.length-1].ts - track[0].ts) / 1000;
-  const glide = glideDrop > 0 ? Math.round(glideDist / glideDrop) : ac.glide;
-  setText('s-dist', (dist / 1000).toFixed(1)); setText('s-dur', fmtDur(durS));
-  setText('s-glide', '1:' + glide); setText('s-altgain', Math.round(altGain));
-  drawStoryTrack(track);
-}
-
-function drawStoryTrack(pts) {
-  const canvas = document.getElementById('s-track-canvas');
-  if (!canvas) return;
-  const wrap = canvas.parentElement;
-  const dpr = Math.min(window.devicePixelRatio || 1, 3);
-  canvas.width = wrap.offsetWidth * dpr; canvas.height = wrap.offsetHeight * dpr;
-  canvas.style.width = '100%'; canvas.style.height = '100%';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr); ctx.clearRect(0, 0, wrap.offsetWidth, wrap.offsetHeight);
-  if (storyMapMode) {
-    ctx.fillStyle = '#111'; ctx.fillRect(0, 0, wrap.offsetWidth, wrap.offsetHeight);
-    ctx.strokeStyle = 'rgba(255,255,255,0.055)'; ctx.lineWidth = 1;
-    for (let x = 0; x < wrap.offsetWidth; x += 28) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, wrap.offsetHeight); ctx.stroke(); }
-    for (let y = 0; y < wrap.offsetHeight; y += 28) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(wrap.offsetWidth, y); ctx.stroke(); }
-  }
-  if (!pts || pts.length < 2) {
-    ctx.strokeStyle = 'rgba(34,197,94,0.15)'; ctx.lineWidth = 2; ctx.setLineDash([6,6]);
-    ctx.beginPath(); ctx.moveTo(wrap.offsetWidth * 0.1, wrap.offsetHeight * 0.5); ctx.lineTo(wrap.offsetWidth * 0.9, wrap.offsetHeight * 0.5); ctx.stroke();
-    return;
-  }
-  const lats = pts.map(p => p.lat), lons = pts.map(p => p.lon);
-  const minLa = Math.min(...lats), maxLa = Math.max(...lats), minLo = Math.min(...lons), maxLo = Math.max(...lons);
-  const padv = 20, W = wrap.offsetWidth - padv*2, H = wrap.offsetHeight - padv*2;
-  const laR = maxLa - minLa || 0.001, loR = maxLo - minLo || 0.001;
-  const scale = Math.min(W / loR, H / laR);
-  const ox = (W - loR * scale) / 2, oy = (H - laR * scale) / 2;
-  const tx = lo => padv + ox + (lo - minLo) * scale;
-  const ty = la => padv + oy + (maxLa - la) * scale;
-  if (storyMapMode) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 10; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(tx(pts[0].lon), ty(pts[0].lat));
-    for (let i = 1; i < pts.length; i++) ctx.lineTo(tx(pts[i].lon), ty(pts[i].lat));
-    ctx.stroke();
-  }
-  ctx.shadowColor = '#22c55e'; ctx.shadowBlur = 14; ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 3;
-  ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.setLineDash([]);
-  ctx.beginPath(); ctx.moveTo(tx(pts[0].lon), ty(pts[0].lat));
-  for (let i = 1; i < pts.length; i++) ctx.lineTo(tx(pts[i].lon), ty(pts[i].lat));
-  ctx.stroke();
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = '#22c55e'; ctx.beginPath(); ctx.arc(tx(pts[0].lon), ty(pts[0].lat), 5, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#ef5350'; ctx.beginPath(); ctx.arc(tx(pts[pts.length-1].lon), ty(pts[pts.length-1].lat), 5, 0, Math.PI*2); ctx.fill();
-}
-
-function exportStory() {
-  const el = document.getElementById('story-frame');
-  html2canvas(el, { backgroundColor: '#0d0d0d', scale: 3, useCORS: true, logging: false }).then(c => {
-    const a = document.createElement('a'); a.download = 'glideos-story-' + Date.now() + '.png'; a.href = c.toDataURL('image/png'); a.click(); showToast('PNG gespeichert!');
-  }).catch(() => showToast('Export fehlgeschlagen'));
-}
-
-function exportStoryTransparent() {
-  const el = document.getElementById('story-frame');
-  const oldBg = el.style.background, oldBorder = el.style.borderColor;
-  el.style.background = 'transparent'; el.style.borderColor = 'transparent';
-  html2canvas(el, { backgroundColor: null, scale: 3, useCORS: true, logging: false }).then(c => {
-    const a = document.createElement('a'); a.download = 'glideos-story-transparent-' + Date.now() + '.png'; a.href = c.toDataURL('image/png'); a.click(); showToast('Transparent PNG gespeichert!');
-  }).catch(() => showToast('Export fehlgeschlagen')).finally(() => { el.style.background = oldBg; el.style.borderColor = oldBorder; });
-}
-
-function exportTelemetryOverlay() {
-  const fix = latestFix || (track && track.length ? track[track.length - 1] : null);
-  if (!fix) { showToast('Noch kein GPS-Fix'); return; }
-  const stage = document.createElement('div'); stage.className = 'export-stage';
-  const wrap = document.createElement('div'); wrap.className = 'telemetry-export';
-  wrap.innerHTML = `<div class="telemetry-export-map" id="export-map"></div><div class="telemetry-export-title">glideOS · telemetry</div><div class="telemetry-export-hud"><div class="telemetry-export-box"><div class="telemetry-export-label">Speed</div><div class="telemetry-export-value acc">${Math.round(displayGs||fix.gs||0)} km/h</div></div><div class="telemetry-export-box"><div class="telemetry-export-label">Höhe</div><div class="telemetry-export-value">${fix.alt!=null?Math.round(fix.alt)+' m':'---'}</div></div><div class="telemetry-export-box"><div class="telemetry-export-label">Vario</div><div class="telemetry-export-value">${displayVario!=null?((displayVario>=0?'+':'')+displayVario.toFixed(1)):'---'}</div></div></div>`;
-  stage.appendChild(wrap); document.body.appendChild(stage);
-  const exportMap = L.map(wrap.querySelector('#export-map'), { zoomControl: false, attributionControl: false, dragging: false, tap: false });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, crossOrigin: true }).addTo(exportMap);
-  const pts = track && track.length ? track.map(p => [p.lat, p.lon]) : [[fix.lat, fix.lon]];
-  L.polyline(pts, { color: '#22c55e', weight: 8, opacity: 0.95 }).addTo(exportMap);
-  L.circleMarker([fix.lat, fix.lon], { radius: 14, color: '#22c55e', fillColor: '#22c55e', fillOpacity: 1 }).addTo(exportMap);
-  if (pts.length > 1) exportMap.fitBounds(pts, { padding: [120, 120] });
-  else exportMap.setView([fix.lat, fix.lon], 15);
-  setTimeout(() => {
-    exportMap.invalidateSize();
-    html2canvas(wrap, { backgroundColor: null, scale: 1, useCORS: true, logging: false }).then(c => {
-      const a = document.createElement('a'); a.download = 'glideos-telemetry-overlay-' + Date.now() + '.png'; a.href = c.toDataURL('image/png'); a.click(); showToast('MAP HUD PNG gespeichert!');
-    }).catch(() => showToast('HUD Export fehlgeschlagen')).finally(() => { exportMap.remove(); stage.remove(); });
-  }, 800);
-}
-
-function downloadIGC() {
-  loadTrack();
-  if (!track || track.length < 2) { showToast('Kein Track!'); return; }
-  const ac = AC[selectedAC];
-  const lines = ['AXXX glideOS', 'HFDTE' + igcDate(new Date(track[0].ts)), 'HFPLTPILOT:', 'HFGTYGLIDERTYPE:' + ac.name, 'HFRFWFIRMWAREVERSION:1.1', 'I013638FXA'];
-  track.forEach(pt => {
-    const d = new Date(pt.ts);
-    const t = pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds());
-    const laD = Math.floor(Math.abs(pt.lat)), laM = String(Math.round((Math.abs(pt.lat) - laD) * 60000)).padStart(5,'0'), laH = pt.lat >= 0 ? 'N' : 'S';
-    const loD = Math.floor(Math.abs(pt.lon)), loM = String(Math.round((Math.abs(pt.lon) - loD) * 60000)).padStart(5,'0'), loH = pt.lon >= 0 ? 'E' : 'W';
-    const a = String(Math.max(0, Math.round(pt.alt != null && Number.isFinite(pt.alt) ? pt.alt : 0))).padStart(5,'0');
-    lines.push(`B${t}${String(laD).padStart(2,'0')}${laM}${laH}${String(loD).padStart(3,'0')}${loM}${loH}A${a}${a}000`);
-  });
-  lines.push('LglideOS EXPORT');
-  const blob = new Blob([lines.join('\r\n')], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'glideos_' + igcDate(new Date(track[0].ts)) + '.igc'; a.click();
-  URL.revokeObjectURL(url); showToast('IGC exportiert!');
-}
-
-function igcDate(d) { return pad(d.getDate()) + pad(d.getMonth()+1) + String(d.getFullYear()).slice(2); }
-function fmtDur(s) { const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = Math.floor(s%60); return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`; }
-
-/* ═══════════════════════════════════════════════
-   INIT
-═══════════════════════════════════════════════ */
-loadTrack();
-loadHome();
-loadTrackerRegs();
-loadOwnReg();
-selectAC(selectedAC, true);
-checkMotionPermission();
-renderTrackerList();
-
-const ttSel = document.getElementById('tt-ac-sel');
-if (ttSel) ttSel.addEventListener('change', () => selectAC(ttSel.value));
-
-window.addEventListener('resize', () => {
-  if (liveMapReady && liveMap) setTimeout(() => liveMap.invalidateSize(), 150);
-  if (ttMapReady && ttMap) setTimeout(() => ttMap.invalidateSize(), 150);
-  if (trackerMapReady && trackerMap) setTimeout(() => trackerMap.invalidateSize(), 150);
-});
-</script>
-</body>
-</html>
+      while (l < track.length && (track[l].ts - track[k].ts) / 1000... [truncated]
