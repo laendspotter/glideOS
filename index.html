@@ -798,45 +798,166 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 10px 12px;
-  position: relative; overflow: hidden; cursor: pointer; transition: border-color 0.15s; flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  /* FIX: flex-shrink:0 damit karten nie kleiner werden */
+  flex-shrink: 0;
 }
 .glider-card::before {
-  content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; border-radius: 2px 0 0 2px;
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+  border-radius: 2px 0 0 2px;
 }
 .glider-card.has-fix::before { background: var(--blue); }
 .glider-card.no-fix::before  { background: var(--text3); }
 .glider-card.not-found::before { background: var(--yellow); }
-.glider-card.selected { border-color: var(--card-color, var(--blue)); box-shadow: 0 0 0 1px var(--card-color, var(--blue)), inset 0 0 0 1px rgba(255,255,255,0.04); background: color-mix(in srgb, var(--surface) 90%, var(--card-color, var(--blue)) 10%); }
+
+/* FIX: Selected/tapped state */
+.glider-card.selected {
+  border-color: var(--card-color, var(--blue));
+  box-shadow: 0 0 0 1px var(--card-color, var(--blue)), inset 0 0 0 1px rgba(255,255,255,0.04);
+  background: color-mix(in srgb, var(--surface) 90%, var(--card-color, var(--blue)) 10%);
+}
 .glider-card:active { opacity: 0.85; }
 
-.gc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
-.gc-reg { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.08em; color: var(--blue); }
-.gc-cn { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text2); background: var(--bg3); padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
-.gc-model { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text3); font-style: italic; margin-bottom: 5px; }
-.gc-remove { background: none; border: none; color: var(--text3); font-size: 12px; cursor: pointer; padding: 4px 4px 4px 8px; line-height: 1; }
+.gc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3px;
+}
+.gc-reg {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  color: var(--blue);
+}
+.gc-cn {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--text2);
+  background: var(--bg3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+.gc-model {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--text3);
+  font-style: italic;
+  margin-bottom: 5px;
+}
+.gc-remove {
+  background: none;
+  border: none;
+  color: var(--text3);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 4px 4px 8px;
+  line-height: 1;
+}
 .gc-remove:hover { color: var(--red); }
-.gc-status { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.08em; }
+
+.gc-status {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
 .gc-status.waiting { color: var(--text3); }
 .gc-status.no-db   { color: var(--yellow); }
-.gc-live { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; overflow: visible; }
-.gc-live-item { text-align: center; background: var(--bg3); border-radius: 7px; padding: 6px 4px; min-width: 0; }
+
+/* FIX: live grid — alle daten anzeigen auch wenn viele karten */
+.gc-live {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 5px;
+  /* FIX: nie abschneiden */
+  overflow: visible;
+}
+.gc-live-item {
+  text-align: center;
+  background: var(--bg3);
+  border-radius: 7px;
+  padding: 6px 4px;
+  min-width: 0;
+}
 .gc-live-lbl { font-family: 'DM Mono', monospace; font-size: 6px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); }
 .gc-live-val { font-family: 'Bebas Neue', sans-serif; font-size: 20px; line-height: 1.1; color: var(--text); }
 .gc-live-val.up   { color: var(--acc); }
 .gc-live-val.down { color: var(--blue); }
-.gc-age { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--text3); text-align: right; margin-top: 4px; }
-.gc-focus { display: inline-flex; align-items: center; gap: 4px; margin-top: 5px; padding: 4px 8px; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; color: var(--blue); font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.1em; cursor: pointer; text-transform: uppercase; }
+
+.gc-age {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  color: var(--text3);
+  text-align: right;
+  margin-top: 4px;
+}
+
+.gc-focus {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 5px;
+  padding: 4px 8px;
+  background: rgba(56,189,248,0.1);
+  border: 1px solid rgba(56,189,248,0.25);
+  border-radius: 6px;
+  color: var(--blue);
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  text-transform: uppercase;
+}
 
 /* ─── FIX: Leaflet Popup Dark Theme ─── */
-.leaflet-popup-content-wrapper { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important; padding: 0 !important; overflow: hidden; }
-.leaflet-popup-content { margin: 0 !important; color: var(--text) !important; }
+.leaflet-popup-content-wrapper {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+  color: var(--text) !important;
+}
 .leaflet-popup-tip-container { display: none !important; }
-.leaflet-popup-content-wrapper:has(.popup-selected) { border-color: var(--blue) !important; box-shadow: 0 0 0 1px var(--blue), 0 8px 32px rgba(0,0,0,0.6) !important; }
+/* FIX: selected card border via colored box-shadow on popup too */
+.leaflet-popup-content-wrapper:has(.popup-selected) {
+  border-color: var(--blue) !important;
+  box-shadow: 0 0 0 1px var(--blue), 0 8px 32px rgba(0,0,0,0.6) !important;
+}
 .leaflet-container { background: #111 !important; }
 .leaflet-tile { filter: brightness(0.72) saturate(0.65) !important; }
 
 /* TOAST */
-#toast { position: fixed; bottom: calc(var(--safe-bot) + 90px); left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 9px 18px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text); letter-spacing: 0.07em; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity 0.25s; white-space: nowrap; }
+#toast {
+  position: fixed;
+  bottom: calc(var(--safe-bot) + 90px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 9px 18px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text);
+  letter-spacing: 0.07em;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s;
+  white-space: nowrap;
+}
 #toast.show { opacity: 1; }
 
 /* EXPORT STUFF */
@@ -1440,7 +1561,7 @@ function removeGlider(reg) {
   if (resolved?.hexId) {
     const m = trackerMarkers[resolved.hexId];
     if (m) {
-      if (trackerMapReady) { if (m.marker) trackerMap.removeLayer(m.marker); if (m.line) trackerMap.removeLayer(m.line); if (m.circle) trackerMap.removeLayer(m.circle); }
+      if (trackerMapReady) { if (m.marker) trackerMap.removeLayer(m.marker); if (m.line) trackerMap.removeLayer(m.line); }
       delete trackerMarkers[resolved.hexId];
     }
     delete trackerPositions[resolved.hexId];
@@ -1465,8 +1586,7 @@ function handlePositionUpdate(pos) {
       .bindPopup(() => buildPopupContent(pos.hexId), { className: 'glide-popup', closeButton: false, maxWidth: 220 });
     // FIX: Popup öffnen → karte focussen + card highlighten
     marker.on('click', () => selectGlider(pos.hexId));
-    const circle = pos.altM && pos.gleitzahl ? L.circle([pos.lat, pos.lon], { radius: pos.altM * pos.gleitzahl, color, weight: 1, opacity: 0.3, fillOpacity: 0.05 }).addTo(trackerMap) : null;
-    trackerMarkers[pos.hexId] = { marker, line, circle, latLngs: [[pos.lat, pos.lon]], color };
+    trackerMarkers[pos.hexId] = { marker, line, latLngs: [[pos.lat, pos.lon]], color };
   } else {
     const m = trackerMarkers[pos.hexId];
     m.marker.setLatLng([pos.lat, pos.lon]);
@@ -1474,10 +1594,6 @@ function handlePositionUpdate(pos) {
     m.latLngs.push([pos.lat, pos.lon]);
     if (m.latLngs.length > 300) m.latLngs.shift();
     m.line.setLatLngs(m.latLngs);
-    if (pos.altM && pos.gleitzahl) {
-      if (!m.circle) m.circle = L.circle([pos.lat, pos.lon], { radius: pos.altM * pos.gleitzahl, color: m.color, weight: 1, opacity: 0.3, fillOpacity: 0.05 }).addTo(trackerMap);
-      else { m.circle.setLatLng([pos.lat, pos.lon]); m.circle.setRadius(pos.altM * pos.gleitzahl); }
-    } else if (m.circle) { trackerMap.removeLayer(m.circle); m.circle = null; }
     // offenes popup updaten
     if (m.marker.isPopupOpen()) m.marker.getPopup().setContent(buildPopupContent(pos.hexId));
   }
@@ -1497,33 +1613,33 @@ function buildPopupContent(hexId) {
   const pos = trackerPositions[hexId];
   if (!pos) return '<div style="padding:12px;font-family:monospace;color:#777">Kein Fix</div>';
   const age = Math.round((Date.now() - pos.ts) / 1000);
-  const ageStr = age < 60 ? \`\${age}s\` : \`\${Math.round(age/60)}min\`;
-  return \`
+  const ageStr = age < 60 ? `${age}s` : `${Math.round(age/60)}min`;
+  return `
     <div style="padding:12px 14px;min-width:170px">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#38bdf8;border-bottom:1px solid #2a2a2a;padding-bottom:5px;margin-bottom:7px;display:flex;align-items:center;gap:6px">
-        \${pos.registration || hexId}
-        \${pos.cn ? \`<span style="font-family:'DM Mono',monospace;font-size:10px;color:#555;background:#181818;padding:2px 6px;border-radius:4px">\${pos.cn}</span>\` : ''}
+        ${pos.registration || hexId}
+        ${pos.cn ? `<span style="font-family:'DM Mono',monospace;font-size:10px;color:#555;background:#181818;padding:2px 6px;border-radius:4px">${pos.cn}</span>` : ''}
       </div>
-      \${pos.model ? \`<div style="font-family:'DM Mono',monospace;color:#444;font-size:9px;margin-bottom:7px;font-style:italic">\${pos.model}</div>\` : ''}
+      ${pos.model ? `<div style="font-family:'DM Mono',monospace;color:#444;font-size:9px;margin-bottom:7px;font-style:italic">${pos.model}</div>` : ''}
       <div style="display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-family:'DM Mono',monospace;font-size:10px;align-items:center">
-        <span style="color:#555">Höhe</span><span style="color:#f0f0f0;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">\${pos.altM != null ? pos.altM + ' m' : '—'}</span>
-        <span style="color:#555">Speed</span><span style="color:#f0f0f0;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">\${pos.speedKmh != null ? pos.speedKmh + ' km/h' : '—'}</span>
-        <span style="color:#555">Kurs</span><span style="color:#f0f0f0;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">\${pos.course != null ? pos.course + '°' : '—'}</span>
-        \${pos.varioMs != null ? \`<span style="color:#555">Vario</span><span style="color:\${pos.varioMs > 0 ? '#22c55e' : '#38bdf8'};text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">\${pos.varioMs > 0 ? '+' : ''}\${pos.varioMs} m/s</span>\` : ''}
-        <span style="color:#333">vor</span><span style="color:#333;text-align:right">\${ageStr}</span>
+        <span style="color:#555">Höhe</span><span style="color:#f0f0f0;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">${pos.altM != null ? pos.altM + ' m' : '—'}</span>
+        <span style="color:#555">Speed</span><span style="color:#f0f0f0;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">${pos.speedKmh != null ? pos.speedKmh + ' km/h' : '—'}</span>
+        <span style="color:#555">Kurs</span><span style="color:#f0f0f0;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">${pos.course != null ? pos.course + '°' : '—'}</span>
+        ${pos.varioMs != null ? `<span style="color:#555">Vario</span><span style="color:${pos.varioMs > 0 ? '#22c55e' : '#38bdf8'};text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">${pos.varioMs > 0 ? '+' : ''}${pos.varioMs} m/s</span>` : ''}
+        <span style="color:#333">vor</span><span style="color:#333;text-align:right">${ageStr}</span>
       </div>
     </div>
-  \`;
+  `;
 }
 
 function createGliderIcon(course, color) {
-  const svg = \`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
-    <g transform="rotate(\${course},20,20)">
-      <ellipse cx="20" cy="20" rx="3" ry="12" fill="\${color}" stroke="#000" stroke-width="1.2"/>
-      <ellipse cx="20" cy="20" rx="16" ry="2.5" fill="\${color}" stroke="#000" stroke-width="1.2"/>
-      <ellipse cx="20" cy="30" rx="7" ry="1.5" fill="\${color}" stroke="#000" stroke-width="1.2"/>
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+    <g transform="rotate(${course},20,20)">
+      <ellipse cx="20" cy="20" rx="3" ry="12" fill="${color}" stroke="#000" stroke-width="1.2"/>
+      <ellipse cx="20" cy="20" rx="16" ry="2.5" fill="${color}" stroke="#000" stroke-width="1.2"/>
+      <ellipse cx="20" cy="30" rx="7" ry="1.5" fill="${color}" stroke="#000" stroke-width="1.2"/>
     </g>
-  </svg>\`;
+  </svg>`;
   return L.divIcon({ html: svg, className: '', iconSize: [40, 40], iconAnchor: [20, 20], popupAnchor: [0, -22] });
 }
 
@@ -1569,42 +1685,42 @@ function renderTrackerList() {
 
     let liveHtml = '';
     if (!hexId) {
-      liveHtml = \`<div class="gc-status no-db">Nicht in OGN DB</div>\`;
+      liveHtml = `<div class="gc-status no-db">Nicht in OGN DB</div>`;
     } else if (!pos) {
-      liveHtml = \`<div class="gc-status waiting">Warte auf Signal…</div>\`;
+      liveHtml = `<div class="gc-status waiting">Warte auf Signal…</div>`;
     } else {
       const vCol = pos.varioMs != null ? (pos.varioMs > 0.3 ? 'up' : pos.varioMs < -0.3 ? 'down' : '') : '';
-      liveHtml = \`
+      liveHtml = `
         <div class="gc-live">
           <div class="gc-live-item">
             <div class="gc-live-lbl">Höhe</div>
-            <div class="gc-live-val">\${pos.altM != null ? pos.altM : '—'}</div>
+            <div class="gc-live-val">${pos.altM != null ? pos.altM : '—'}</div>
           </div>
           <div class="gc-live-item">
             <div class="gc-live-lbl">km/h</div>
-            <div class="gc-live-val">\${pos.speedKmh != null ? pos.speedKmh : '—'}</div>
+            <div class="gc-live-val">${pos.speedKmh != null ? pos.speedKmh : '—'}</div>
           </div>
           <div class="gc-live-item">
             <div class="gc-live-lbl">Vario</div>
-            <div class="gc-live-val \${vCol}">\${pos.varioMs != null ? (pos.varioMs > 0 ? '+' : '') + pos.varioMs : '—'}</div>
+            <div class="gc-live-val ${vCol}">${pos.varioMs != null ? (pos.varioMs > 0 ? '+' : '') + pos.varioMs : '—'}</div>
           </div>
         </div>
-        <div class="gc-age">vor \${age < 60 ? age + 's' : Math.round(age/60) + 'min'}</div>
-        <button class="gc-focus" onclick="focusGlider('\${hexId}')">◎ KARTE</button>
-      \`;
+        <div class="gc-age">vor ${age < 60 ? age + 's' : Math.round(age/60) + 'min'}</div>
+        <button class="gc-focus" onclick="focusGlider('${hexId}')">◎ KARTE</button>
+      `;
     }
 
-    card.innerHTML = \`
+    card.innerHTML = `
       <div class="gc-top">
         <div>
-          <span class="gc-reg" style="color:\${color}">\${reg}</span>
-          \${info?.cn && info.cn !== reg ? \`<span class="gc-cn">\${info.cn}</span>\` : ''}
+          <span class="gc-reg" style="color:${color}">${reg}</span>
+          ${info?.cn && info.cn !== reg ? `<span class="gc-cn">${info.cn}</span>` : ''}
         </div>
-        <button class="gc-remove" onclick="removeGlider('\${reg}')" title="Entfernen">✕</button>
+        <button class="gc-remove" onclick="removeGlider('${reg}')" title="Entfernen">✕</button>
       </div>
-      \${info?.model ? \`<div class="gc-model">\${info.model}</div>\` : ''}
-      \${liveHtml}
-    \`;
+      ${info?.model ? `<div class="gc-model">${info.model}</div>` : ''}
+      ${liveHtml}
+    `;
     list.appendChild(card);
   });
 }
@@ -1634,7 +1750,7 @@ function initTrackerMap() {
 /* ═══════════════════════════════════════════════
    FLIGHT LOGIC (original, unverändert)
 ═══════════════════════════════════════════════ */
-const AC_DEFS = {
+const AC = {
   ASK13: { name: 'ASK 13', circleSpd: 72, glide: 27 },
   ASK21: { name: 'ASK 21B', circleSpd: 82, glide: 34 }
 };
@@ -1681,7 +1797,6 @@ function pad(n) { return String(n).padStart(2, '0'); }
 
 function showToast(msg) {
   const t = document.getElementById('toast');
-  if (!t) return;
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(showToast.tm);
@@ -1735,26 +1850,14 @@ function updateVarioDisplay(v) {
   el.style.color = v > 0.3 ? 'var(--acc)' : v < -0.3 ? 'var(--blue)' : 'var(--text)';
   const pct = Math.min(Math.abs(v) / 5, 1);
   const barH = Math.max(2, pct * outerH);
-  if (v > 0.1) { 
-    fill.style.background = 'var(--acc)'; 
-    fill.style.height = barH + 'px'; 
-    fill.style.top = (center - barH) + 'px'; 
-  }
-  else if (v < -0.1) { 
-    fill.style.background = 'var(--blue)'; 
-    fill.style.height = barH + 'px'; 
-    fill.style.top = center + 'px'; 
-  }
-  else { 
-    fill.style.height = '2px'; 
-    fill.style.top = (center - 1) + 'px'; 
-    fill.style.background = 'var(--border)'; 
-  }
+  if (v > 0.1) { fill.style.background = 'var(--acc)'; fill.style.height = barH + 'px'; fill.style.top = (center - barH) + 'px'; }
+  else if (v < -0.1) { fill.style.background = 'var(--blue)'; fill.style.height = barH + 'px'; fill.style.top = center + 'px'; }
+  else { fill.style.height = '2px'; fill.style.top = (center - 1) + 'px'; fill.style.background = 'var(--border)'; }
 }
 
 function updateLabValues() {
   const fix = latestFix || (track && track.length ? track[track.length - 1] : null);
-  const ac = AC_DEFS[selectedAC] || AC_DEFS.ASK13;
+  const ac = AC[selectedAC] || AC.ASK13;
   let gain = 0, maxClimb = null, glide = null;
   if (track && track.length > 1) {
     for (let i = 1; i < track.length; i++) {
@@ -1811,11 +1914,10 @@ function loadHome() {
   try { const h = localStorage.getItem('glideos_home'); if (h) homeFix = JSON.parse(h); } catch(e) {}
 }
 
-function updateReachCircle(lat, lon, alt, dynamicGlide) {
-  const ac = AC_DEFS[selectedAC] || AC_DEFS.ASK13;
-  const glide = dynamicGlide || ac.glide;
+function updateReachCircle(lat, lon, alt) {
+  const ac = AC[selectedAC] || AC.ASK13;
   if (alt == null || !Number.isFinite(alt)) return;
-  const r = Math.max(0, alt * glide);
+  const r = Math.max(0, alt * ac.glide);
   if (liveMapReady && liveMap) {
     if (!reachCircle) reachCircle = L.circle([lat, lon], { radius: r, color: '#22c55e', weight: 1, opacity: 0.28, fillOpacity: 0.03 }).addTo(liveMap);
     else { reachCircle.setLatLng([lat, lon]); reachCircle.setRadius(r); }
@@ -1863,7 +1965,7 @@ function syncFullscreenMap() {
   if (fsWind && liveWind) fsWind.textContent = liveWind.textContent || 'WIND --';
   const fsStart = document.getElementById('fs-start-btn');
   if (fsStart) { fsStart.textContent = isRecording ? '■ STOPP' : 'START'; fsStart.classList.toggle('recording', isRecording); }
-  updateReachCircle(fix.lat, fix.lon, fix.alt, latestFix?.gleitzahl);
+  updateReachCircle(fix.lat, fix.lon, fix.alt);
 }
 
 let gpsStarted = false, gpsPrimed = false;
@@ -1886,8 +1988,8 @@ function startGPS() {
 
 function onGPSErr(e) {
   gpsStarted = false;
-  if (e.code === 1) { const errEl = document.getElementById('gps-err'); if (errEl) errEl.classList.add('show'); setStatus('GPS verweigert', 'err'); }
-  else if (e.code === 3) { setStatus('GPS Timeout', 'search'); primeGPSOnce(); }
+  if (e.code === e.PERMISSION_DENIED) { const errEl = document.getElementById('gps-err'); if (errEl) errEl.classList.add('show'); setStatus('GPS verweigert', 'err'); }
+  else if (e.code === e.TIMEOUT) { setStatus('GPS Timeout', 'search'); primeGPSOnce(); }
   else { setStatus('GPS Fehler: ' + e.message, 'err'); }
 }
 
@@ -1932,7 +2034,7 @@ function onGPS(pos) {
   if (recDot) recDot.className = isRecording ? 'rec' : 'gps';
   setStatus('GPS OK · ' + rawLat.toFixed(4) + ',' + rawLon.toFixed(4), 'on');
   updateLiveMap(lat, lon, alt, displayGs, hdg);
-  updateReachCircle(lat, lon, alt, latestFix?.gleitzahl);
+  updateReachCircle(lat, lon, alt);
   updateLabValues();
   syncFullscreenMap();
   if (isRecording) {
@@ -2035,6 +2137,7 @@ function toggleRecording() {
     if (ttRec) ttRec.style.display = 'flex';
     clearInterval(timerIv); timerIv = setInterval(updateTimer, 1000); updateTimer();
     showToast('Aufzeichnung gestartet');
+    // OGN background tracking starten wenn reg vorhanden
     if (ownReg && WS_URL) startOwnRegOgnTracking();
   } else {
     isRecording = false; clearInterval(timerIv);
@@ -2071,7 +2174,7 @@ function loadTrack() {
   try {
     const t = localStorage.getItem('glideos_track'), a = localStorage.getItem('glideos_ac'), s = localStorage.getItem('glideos_start'), sm = localStorage.getItem('glideos_story_map');
     if (t) track = JSON.parse(t);
-    if (a && AC_DEFS[a]) selectedAC = a;
+    if (a && AC[a]) selectedAC = a;
     if (s) flightStart = parseInt(s);
     storyMapMode = sm === '1';
     setText('disp-pts', track.length || 0);
@@ -2085,13 +2188,13 @@ function refreshLiveMapFromTrack() {
 }
 
 function selectAC(ac, silent) {
-  if (!AC_DEFS[ac]) return; selectedAC = ac;
+  if (!AC[ac]) return; selectedAC = ac;
   document.getElementById('ac-ask13').classList.toggle('active', ac === 'ASK13');
   document.getElementById('ac-ask21').classList.toggle('active', ac === 'ASK21');
-  setText('tt-ac-label', AC_DEFS[ac].name);
+  setText('tt-ac-label', AC[ac].name);
   const sel = document.getElementById('tt-ac-sel');
   if (sel) sel.value = ac;
-  if (!silent) showToast(AC_DEFS[ac].name + ' ausgewählt');
+  if (!silent) showToast(AC[ac].name + ' ausgewählt');
   saveTrack(true);
 }
 
@@ -2179,36 +2282,72 @@ function analyzeTrack() {
       if ((ha >= CIRCLE_DEG) !== isThermic) break;
       k = l;
     }
-    segs.push({ start: i, end: k - 1, isThermic });
-    i = k - 1;
+    segs.push({ start: i, end: Math.min(k, track.length - 1), type: isThermic ? 'thermic' : 'glide' });
+    i = k;
   }
-  let dist = 0, maxAlt = 0, climbSecs = 0, climbGain = 0;
+  let totalDist = 0, maxAlt = 0, thTime = 0, totalTime = (track[track.length - 1].ts - track[0].ts) / 1000;
+  let thGain = 0, thCount = 0;
   segs.forEach(s => {
     const pts = track.slice(s.start, s.end + 1);
-    if (pts.length < 2) return;
-    const col = s.isThermic ? '#ef5350' : '#38bdf8';
-    const l = L.polyline(pts.map(p => [p.lat, p.lon]), { color: col, weight: 4, opacity: 0.85 }).addTo(ttMap);
-    ttLayers.push(l);
-    if (s.isThermic) {
-      climbSecs += (pts[pts.length - 1].ts - pts[0].ts) / 1000;
-      const g = (pts[pts.length - 1].alt || 0) - (pts[0].alt || 0);
-      if (g > 0) climbGain += g;
+    const latlngs = pts.map(p => [p.lat, p.lon]);
+    const color = s.type === 'thermic' ? '#ef5350' : '#444';
+    const line = L.polyline(latlngs, { color, weight: 4, opacity: 0.8 }).addTo(ttMap);
+    ttLayers.push(line);
+    if (s.type === 'thermic') {
+      thTime += (track[s.end].ts - track[s.start].ts) / 1000;
+      const gain = (track[s.end].alt || 0) - (track[s.start].alt || 0);
+      if (gain > 0) { thGain += gain; thCount++; }
     }
+    for (let m = 1; m < pts.length; m++) totalDist += haversine(pts[m-1].lat, pts[m-1].lon, pts[m].lat, pts[m].lon);
   });
+  track.forEach(p => { if (p.alt > maxAlt) maxAlt = p.alt; });
+  ttMap.fitBounds(L.polyline(track.map(p => [p.lat, p.lon])).getBounds(), { padding: [30, 30] });
+  setText('st-dur', Math.floor(totalTime / 60) + 'm');
+  setText('st-dist', (totalDist / 1000).toFixed(1) + 'km');
+  setText('st-alt', Math.round(maxAlt) + 'm');
+  setText('st-thpct', Math.round((thTime / totalTime) * 100) + '%');
+  setText('st-avgc', thTime > 0 ? (thGain / thTime).toFixed(1) + 'm/s' : '0.0');
+  let mc = 0; track.forEach(p => { if (p.vario > mc) mc = p.vario; });
+  setText('st-maxc', mc.toFixed(1) + 'm/s');
+}
+
+function refreshStory() {
+  loadTrack();
+  const canvas = document.getElementById('s-track-canvas');
+  if (!canvas || !track.length) return;
+  const ctx = canvas.getContext('2d');
+  const d = new Date(track[0].ts || Date.now());
+  setText('s-date', pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear());
+  setText('s-ac', AC[selectedAC]?.name || 'ASK 13');
+  let dist = 0, gain = 0, maxAlt = 0;
   for (let i = 1; i < track.length; i++) {
     dist += haversine(track[i-1].lat, track[i-1].lon, track[i].lat, track[i].lon);
+    if (track[i].alt > track[i-1].alt) gain += (track[i].alt - track[i-1].alt);
     if (track[i].alt > maxAlt) maxAlt = track[i].alt;
   }
-  const totalSecs = (track[track.length - 1].ts - track[0].ts) / 1000;
-  setText('st-dur', Math.round(totalSecs / 60) + 'm');
-  setText('st-dist', (dist / 1000).toFixed(1) + 'km');
-  setText('st-alt', Math.round(maxAlt) + 'm');
-  setText('st-thpct', Math.round((climbSecs / totalSecs) * 100) + '%');
-  setText('st-avgc', climbSecs > 0 ? (climbGain / climbSecs).toFixed(1) + 'm/s' : '0.0m/s');
-  const vs = track.map(p => p.vario).filter(v => v != null);
-  setText('st-maxc', vs.length ? Math.max(...vs).toFixed(1) + 'm/s' : '0.0m/s');
-  const bounds = L.latLngBounds(track.map(p => [p.lat, p.lon]));
-  ttMap.fitBounds(bounds, { padding: [30, 30] });
+  const durS = Math.floor((track[track.length - 1].ts - track[0].ts) / 1000);
+  setText('s-dist', (dist / 1000).toFixed(1));
+  setText('s-dur', pad(Math.floor(durS / 3600)) + ':' + pad(Math.floor((durS % 3600) / 60)) + ':' + pad(durS % 60));
+  setText('s-altgain', Math.round(gain));
+  let sink = 0, sinkDist = 0;
+  for (let i = 1; i < track.length; i++) {
+    const da = (track[i].alt || 0) - (track[i-1].alt || 0);
+    const dd = haversine(track[i-1].lat, track[i-1].lon, track[i].lat, track[i].lon);
+    if (da < -0.2 && dd > 2) { sink += Math.abs(da); sinkDist += dd; }
+  }
+  setText('s-glide', sink > 10 ? '1:' + Math.round(sinkDist / sink) : '1:--');
+  const w = canvas.width = canvas.offsetWidth * 2, h = canvas.height = canvas.offsetHeight * 2;
+  ctx.clearRect(0, 0, w, h);
+  if (!storyMapMode) {
+    let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
+    track.forEach(p => { if (p.lat < minLat) minLat = p.lat; if (p.lat > maxLat) maxLat = p.lat; if (p.lon < minLon) minLon = p.lon; if (p.lon > maxLon) maxLon = p.lon; });
+    const latSpan = maxLat - minLat, lonSpan = maxLon - minLon, span = Math.max(latSpan, lonSpan) || 0.01;
+    const margin = 40;
+    const project = (lat, lon) => [margin + (lon - minLon) / span * (w - 2 * margin), h - (margin + (lat - minLat) / span * (h - 2 * margin))];
+    ctx.beginPath(); ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    track.forEach((p, i) => { const [x, y] = project(p.lat, p.lon); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+    ctx.shadowBlur = 20; ctx.shadowColor = 'rgba(34,197,94,0.5)'; ctx.stroke();
+  }
 }
 
 function toggleStoryMap() {
@@ -2217,108 +2356,108 @@ function toggleStoryMap() {
   refreshStory();
 }
 
-async function refreshStory() {
-  loadTrack();
-  if (!track || track.length < 5) return;
-  const last = track[track.length - 1];
-  setText('s-date', new Date(last.ts).toLocaleDateString('de-DE'));
-  setText('s-ac', AC_DEFS[selectedAC].name);
-  let dist = 0, gain = 0;
-  for (let i = 1; i < track.length; i++) {
-    dist += haversine(track[i-1].lat, track[i-1].lon, track[i].lat, track[i].lon);
-    const d = (track[i].alt || 0) - (track[i-1].alt || 0); if (d > 0) gain += d;
-  }
-  const durS = (last.ts - track[0].ts) / 1000;
-  setText('s-dist', (dist / 1000).toFixed(1));
-  setText('s-dur', pad(Math.floor(durS / 3600)) + ':' + pad(Math.floor((durS % 3600) / 60)) + ':' + pad(Math.floor(durS % 60)));
-  setText('s-altgain', Math.round(gain));
-  const glide = dist / Math.max(1, (track[0].alt || 0) - (last.alt || 0));
-  setText('s-glide', '1:' + (glide > 0 && glide < 100 ? Math.round(glide) : '--'));
-
-  const canvas = document.getElementById('s-track-canvas');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width = canvas.offsetWidth * 2, H = canvas.height = canvas.offsetHeight * 2;
-  ctx.clearRect(0, 0, W, H);
-  if (storyMapMode) {
-    const bounds = L.latLngBounds(track.map(p => [p.lat, p.lon]));
-    const mapUrl = \`https://static-maps.yandex.ru/1.x/?lang=en_US&ll=\${bounds.getCenter().lng},\${bounds.getCenter().lat}&z=12&l=map&size=450,450&theme=dark\`;
-    const img = new Image(); img.crossOrigin = 'anonymous'; img.src = mapUrl;
-    img.onload = () => { ctx.globalAlpha = 0.4; ctx.drawImage(img, 0, 0, W, H); ctx.globalAlpha = 1.0; drawPath(); };
-  } else { drawPath(); }
-
-  function drawPath() {
-    const lats = track.map(p => p.lat), lons = track.map(p => p.lon);
-    const minLa = Math.min(...lats), maxLa = Math.max(...lats), minLo = Math.min(...lons), maxLo = Math.max(...lons);
-    const scale = Math.min((W - 40) / (maxLo - minLo), (H - 40) / (maxLa - minLa));
-    const offX = (W - (maxLo - minLo) * scale) / 2, offY = (H - (maxLa - minLa) * scale) / 2;
-    ctx.beginPath(); ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 6; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    track.forEach((p, i) => {
-      const x = offX + (p.lon - minLo) * scale, y = H - (offY + (p.lat - minLa) * scale);
-      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-  }
+async function exportStory() {
+  const frame = document.getElementById('story-frame');
+  if (!frame) return;
+  showToast('PNG wird generiert…');
+  try {
+    const canvas = await html2canvas(frame, { backgroundColor: '#000', scale: 2, useCORS: true });
+    const link = document.createElement('a');
+    link.download = 'glideOS-Story-' + Date.now() + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch(e) { showToast('PNG Fehler'); }
 }
 
-function exportStory() {
+async function exportStoryTransparent() {
   const frame = document.getElementById('story-frame');
-  html2canvas(frame, { backgroundColor: '#000', scale: 3 }).then(cvs => {
-    const link = document.createElement('a'); link.download = 'glideOS-story.png'; link.href = cvs.toDataURL('image/png'); link.click();
-  });
-}
-
-function exportStoryTransparent() {
-  const frame = document.getElementById('story-frame');
-  html2canvas(frame, { backgroundColor: null, scale: 3 }).then(cvs => {
-    const link = document.createElement('a'); link.download = 'glideOS-transparent.png'; link.href = cvs.toDataURL('image/png'); link.click();
-  });
+  if (!frame) return;
+  showToast('Transparent PNG…');
+  const originalBG = frame.style.background;
+  const originalBorder = frame.style.border;
+  frame.style.background = 'transparent';
+  frame.style.border = 'none';
+  try {
+    const canvas = await html2canvas(frame, { backgroundColor: null, scale: 2, useCORS: true });
+    const link = document.createElement('a');
+    link.download = 'glideOS-Transparent-' + Date.now() + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch(e) { showToast('PNG Fehler'); }
+  frame.style.background = originalBG;
+  frame.style.border = originalBorder;
 }
 
 function exportTelemetryOverlay() {
-  const stage = document.createElement('div'); stage.className = 'telemetry-export';
-  const last = track[track.length - 1] || {};
-  let dist = 0; for (let i = 1; i < track.length; i++) dist += haversine(track[i-1].lat, track[i-1].lon, track[i].lat, track[i].lon);
-  stage.innerHTML = \`
-    <div class="telemetry-export-title">glideOS TELEMETRY</div>
-    <div class="telemetry-export-hud">
-      <div class="telemetry-export-box"><div class="telemetry-export-label">Speed</div><div class="telemetry-export-value acc">\${Math.round(last.gs || 0)} KMH</div></div>
-      <div class="telemetry-export-box"><div class="telemetry-export-label">Altitude</div><div class="telemetry-export-value">\${Math.round(last.alt || 0)} M</div></div>
-      <div class="telemetry-export-box"><div class="telemetry-export-label">Distance</div><div class="telemetry-export-value">\${(dist / 1000).toFixed(1)} KM</div></div>
-    </div>
-  \`;
+  const stage = document.createElement('div');
+  stage.className = 'export-stage';
   document.body.appendChild(stage);
-  html2canvas(stage, { backgroundColor: null, scale: 1 }).then(cvs => {
-    const link = document.createElement('a'); link.download = 'glideOS-telemetry.png'; link.href = cvs.toDataURL('image/png'); link.click();
-    document.body.removeChild(stage);
-  });
+  const fix = latestFix || (track && track.length ? track[track.length - 1] : { lat: 48.5, lon: 9.0, alt: 1200, gs: 95, vario: 1.2 });
+  const d = new Date(fix.ts || Date.now());
+  const dateStr = pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear();
+  stage.innerHTML = `
+    <div class="telemetry-export" id="tele-export">
+      <div class="telemetry-export-map" id="tele-map"></div>
+      <div class="telemetry-export-title">glideOS · ${dateStr} · ${AC[selectedAC].name}</div>
+      <div class="telemetry-export-hud">
+        <div class="telemetry-export-box"><div class="telemetry-export-label">KM/H</div><div class="telemetry-export-value acc">${Math.round(displayGs || fix.gs || 0)}</div></div>
+        <div class="telemetry-export-box"><div class="telemetry-export-label">METER</div><div class="telemetry-export-value">${Math.round(fix.alt || 0)}</div></div>
+        <div class="telemetry-export-box"><div class="telemetry-export-label">VARIO</div><div class="telemetry-export-value acc">${displayVario != null ? (displayVario > 0 ? '+' : '') + displayVario.toFixed(1) : '0.0'}</div></div>
+      </div>
+    </div>
+  `;
+  const tMap = L.map(stage.querySelector('#tele-map'), { zoomControl: false, attributionControl: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(tMap);
+  if (track.length > 2) {
+    const ll = track.map(p => [p.lat, p.lon]);
+    L.polyline(ll, { color: '#22c55e', weight: 12, opacity: 0.9 }).addTo(tMap);
+    L.circleMarker([fix.lat, fix.lon], { radius: 20, color: '#22c55e', fillColor: '#22c55e', fillOpacity: 1 }).addTo(tMap);
+    tMap.fitBounds(L.polyline(ll).getBounds(), { padding: [100, 100] });
+  } else { tMap.setView([fix.lat, fix.lon], 13); }
+  setTimeout(async () => {
+    try {
+      const canvas = await html2canvas(stage.querySelector('#tele-export'), { backgroundColor: null, scale: 1, useCORS: true });
+      const link = document.createElement('a');
+      link.download = 'glideOS-Overlay-' + Date.now() + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      document.body.removeChild(stage);
+    } catch(e) { showToast('HUD Fehler'); }
+  }, 1000);
 }
 
 function downloadIGC() {
-  if (!track || track.length < 2) { showToast('Kein Track vorhanden'); return; }
-  const date = new Date(track[0].ts);
-  const dateStr = pad(date.getDate()) + pad(date.getMonth() + 1) + String(date.getFullYear()).slice(2);
-  let igc = \`HFDTE\${dateStr}\\nHFPLTPILOTIN: glideOS USER\\nHFGTYGLIDERTYPE: \${AC_DEFS[selectedAC].name}\\n\`;
+  if (!track || track.length < 2) { showToast('Kein Track zum Exportieren'); return; }
+  const d = new Date(track[0].ts || Date.now());
+  const dateStr = pad(d.getDate()) + pad(d.getMonth() + 1) + String(d.getFullYear()).slice(2);
+  let igc = 'HFDTE' + dateStr + '\r\n';
+  igc += 'HFOIDGLIDERTITLE:glideOS v2\r\n';
+  igc += 'HFGIDGLIDERID:' + (ownReg || 'D-KXXX') + '\r\n';
+  igc += 'HFTZNTIMEZONE:0\r\n';
   track.forEach(p => {
-    const t = new Date(p.ts);
-    const time = pad(t.getUTCHours()) + pad(t.getUTCMinutes()) + pad(t.getUTCSeconds());
-    const lat = pad(Math.floor(p.lat)) + pad(Math.round((p.lat % 1) * 60 * 1000)) + 'N';
-    const lon = pad(Math.floor(p.lon), 3) + pad(Math.round((p.lon % 1) * 60 * 1000)) + 'E';
-    igc += \`B\${time}\${lat}\${lon}A\${pad(Math.round(p.alt || 0), 5)}\${pad(Math.round(p.alt || 0), 5)}\\n\`;
+    const pd = new Date(p.ts);
+    const time = pad(pd.getUTCHours()) + pad(pd.getUTCMinutes()) + pad(pd.getUTCSeconds());
+    const latD = Math.floor(Math.abs(p.lat)), latM = Math.round((Math.abs(p.lat) - latD) * 60000);
+    const lonD = Math.floor(Math.abs(p.lon)), lonM = Math.round((Math.abs(p.lon) - lonD) * 60000);
+    igc += 'B' + time + pad(latD) + pad(latM).slice(0,5) + (p.lat >= 0 ? 'N' : 'S') + pad(lonD, 3) + pad(lonM).slice(0,5) + (p.lon >= 0 ? 'E' : 'W') + 'A' + pad(Math.round(p.alt || 0), 5) + pad(Math.round(p.alt || 0), 5) + '\r\n';
   });
   const blob = new Blob([igc], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a'); link.download = \`glideOS-\${dateStr}.igc\`; link.href = url; link.click();
+  const link = document.createElement('a');
+  link.download = 'glideOS-' + dateStr + '-' + (ownReg || 'FLIGHT') + '.igc';
+  link.href = URL.createObjectURL(blob);
+  link.click();
 }
 
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
 window.onload = () => {
-  loadTrack(); loadHome(); loadOwnReg();
-  loadTrackerRegs();
-  selectAC(selectedAC, true);
-  if (track.length > 0) {
-    setText('disp-pts', track.length);
-    const last = track[track.length - 1];
-    setText('disp-gs', Math.round(last.gs || 0));
-    setText('disp-alt', last.alt != null ? Math.round(last.alt) : '---');
+  loadTrack(); loadHome(); loadTrackerRegs(); loadOwnReg();
+  renderTrackerList();
+  if (track.length) {
+    flightStart = parseInt(localStorage.getItem('glideos_start') || Date.now());
+    isRecording = false; // immer gestoppt nach reload
+    setText('disp-pts', track.length); updateTimer();
   }
   checkMotionPermission();
 };
