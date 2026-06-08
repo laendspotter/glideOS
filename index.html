@@ -798,166 +798,45 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 10px 12px;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  transition: border-color 0.15s;
-  /* FIX: flex-shrink:0 damit karten nie kleiner werden */
-  flex-shrink: 0;
+  position: relative; overflow: hidden; cursor: pointer; transition: border-color 0.15s; flex-shrink: 0;
 }
 .glider-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 3px; height: 100%;
-  border-radius: 2px 0 0 2px;
+  content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; border-radius: 2px 0 0 2px;
 }
 .glider-card.has-fix::before { background: var(--blue); }
 .glider-card.no-fix::before  { background: var(--text3); }
 .glider-card.not-found::before { background: var(--yellow); }
-
-/* FIX: Selected/tapped state */
-.glider-card.selected {
-  border-color: var(--card-color, var(--blue));
-  box-shadow: 0 0 0 1px var(--card-color, var(--blue)), inset 0 0 0 1px rgba(255,255,255,0.04);
-  background: color-mix(in srgb, var(--surface) 90%, var(--card-color, var(--blue)) 10%);
-}
+.glider-card.selected { border-color: var(--card-color, var(--blue)); box-shadow: 0 0 0 1px var(--card-color, var(--blue)), inset 0 0 0 1px rgba(255,255,255,0.04); background: color-mix(in srgb, var(--surface) 90%, var(--card-color, var(--blue)) 10%); }
 .glider-card:active { opacity: 0.85; }
 
-.gc-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 3px;
-}
-.gc-reg {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 18px;
-  letter-spacing: 0.08em;
-  color: var(--blue);
-}
-.gc-cn {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  color: var(--text2);
-  background: var(--bg3);
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-left: 6px;
-}
-.gc-model {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  color: var(--text3);
-  font-style: italic;
-  margin-bottom: 5px;
-}
-.gc-remove {
-  background: none;
-  border: none;
-  color: var(--text3);
-  font-size: 12px;
-  cursor: pointer;
-  padding: 4px 4px 4px 8px;
-  line-height: 1;
-}
+.gc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
+.gc-reg { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.08em; color: var(--blue); }
+.gc-cn { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text2); background: var(--bg3); padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
+.gc-model { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text3); font-style: italic; margin-bottom: 5px; }
+.gc-remove { background: none; border: none; color: var(--text3); font-size: 12px; cursor: pointer; padding: 4px 4px 4px 8px; line-height: 1; }
 .gc-remove:hover { color: var(--red); }
-
-.gc-status {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 0.08em;
-}
+.gc-status { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.08em; }
 .gc-status.waiting { color: var(--text3); }
 .gc-status.no-db   { color: var(--yellow); }
-
-/* FIX: live grid — alle daten anzeigen auch wenn viele karten */
-.gc-live {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 5px;
-  /* FIX: nie abschneiden */
-  overflow: visible;
-}
-.gc-live-item {
-  text-align: center;
-  background: var(--bg3);
-  border-radius: 7px;
-  padding: 6px 4px;
-  min-width: 0;
-}
+.gc-live { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; overflow: visible; }
+.gc-live-item { text-align: center; background: var(--bg3); border-radius: 7px; padding: 6px 4px; min-width: 0; }
 .gc-live-lbl { font-family: 'DM Mono', monospace; font-size: 6px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); }
 .gc-live-val { font-family: 'Bebas Neue', sans-serif; font-size: 20px; line-height: 1.1; color: var(--text); }
 .gc-live-val.up   { color: var(--acc); }
 .gc-live-val.down { color: var(--blue); }
-
-.gc-age {
-  font-family: 'DM Mono', monospace;
-  font-size: 8px;
-  color: var(--text3);
-  text-align: right;
-  margin-top: 4px;
-}
-
-.gc-focus {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 5px;
-  padding: 4px 8px;
-  background: rgba(56,189,248,0.1);
-  border: 1px solid rgba(56,189,248,0.25);
-  border-radius: 6px;
-  color: var(--blue);
-  font-family: 'DM Mono', monospace;
-  font-size: 8px;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  text-transform: uppercase;
-}
+.gc-age { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--text3); text-align: right; margin-top: 4px; }
+.gc-focus { display: inline-flex; align-items: center; gap: 4px; margin-top: 5px; padding: 4px 8px; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px; color: var(--blue); font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.1em; cursor: pointer; text-transform: uppercase; }
 
 /* ─── FIX: Leaflet Popup Dark Theme ─── */
-.leaflet-popup-content-wrapper {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
-  padding: 0 !important;
-  overflow: hidden;
-}
-.leaflet-popup-content {
-  margin: 0 !important;
-  color: var(--text) !important;
-}
+.leaflet-popup-content-wrapper { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important; padding: 0 !important; overflow: hidden; }
+.leaflet-popup-content { margin: 0 !important; color: var(--text) !important; }
 .leaflet-popup-tip-container { display: none !important; }
-/* FIX: selected card border via colored box-shadow on popup too */
-.leaflet-popup-content-wrapper:has(.popup-selected) {
-  border-color: var(--blue) !important;
-  box-shadow: 0 0 0 1px var(--blue), 0 8px 32px rgba(0,0,0,0.6) !important;
-}
+.leaflet-popup-content-wrapper:has(.popup-selected) { border-color: var(--blue) !important; box-shadow: 0 0 0 1px var(--blue), 0 8px 32px rgba(0,0,0,0.6) !important; }
 .leaflet-container { background: #111 !important; }
 .leaflet-tile { filter: brightness(0.72) saturate(0.65) !important; }
 
 /* TOAST */
-#toast {
-  position: fixed;
-  bottom: calc(var(--safe-bot) + 90px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 9px 18px;
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  color: var(--text);
-  letter-spacing: 0.07em;
-  z-index: 9999;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.25s;
-  white-space: nowrap;
-}
+#toast { position: fixed; bottom: calc(var(--safe-bot) + 90px); left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 9px 18px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text); letter-spacing: 0.07em; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity 0.25s; white-space: nowrap; }
 #toast.show { opacity: 1; }
 
 /* EXPORT STUFF */
@@ -1363,7 +1242,7 @@ function goHome() {
       if (d.x < 0) d.x = W; if (d.x > W) d.x = 0;
       if (d.y < 0) d.y = H; if (d.y > H) d.y = 0;
       ctx.beginPath(); ctx.arc(d.x, d.y, d.r * devicePixelRatio, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(34,197,94,${d.alpha})`; ctx.fill();
+      ctx.fillStyle = \`rgba(34,197,94,\${d.alpha})\`; ctx.fill();
     });
     for (let i = 0; i < dots.length; i++) {
       for (let j = i + 1; j < dots.length; j++) {
@@ -1371,7 +1250,7 @@ function goHome() {
         const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist < W * 0.14) {
           ctx.beginPath(); ctx.moveTo(dots[i].x, dots[i].y); ctx.lineTo(dots[j].x, dots[j].y);
-          ctx.strokeStyle = `rgba(34,197,94,${0.06 * (1 - dist / (W * 0.14))})`; ctx.lineWidth = devicePixelRatio * 0.5; ctx.stroke();
+          ctx.strokeStyle = \`rgba(34,197,94,\${0.06 * (1 - dist / (W * 0.14))})\`; ctx.lineWidth = devicePixelRatio * 0.5; ctx.stroke();
         }
       }
     }
@@ -1618,33 +1497,33 @@ function buildPopupContent(hexId) {
   const pos = trackerPositions[hexId];
   if (!pos) return '<div style="padding:12px;font-family:monospace;color:#777">Kein Fix</div>';
   const age = Math.round((Date.now() - pos.ts) / 1000);
-  const ageStr = age < 60 ? `${age}s` : `${Math.round(age/60)}min`;
-  return `
+  const ageStr = age < 60 ? \`\${age}s\` : \`\${Math.round(age/60)}min\`;
+  return \`
     <div style="padding:12px 14px;min-width:170px">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#38bdf8;border-bottom:1px solid #2a2a2a;padding-bottom:5px;margin-bottom:7px;display:flex;align-items:center;gap:6px">
-        ${pos.registration || hexId}
-        ${pos.cn ? `<span style="font-family:'DM Mono',monospace;font-size:10px;color:#555;background:#181818;padding:2px 6px;border-radius:4px">${pos.cn}</span>` : ''}
+        \${pos.registration || hexId}
+        \${pos.cn ? \`<span style="font-family:'DM Mono',monospace;font-size:10px;color:#555;background:#181818;padding:2px 6px;border-radius:4px">\${pos.cn}</span>\` : ''}
       </div>
-      ${pos.model ? `<div style="font-family:'DM Mono',monospace;color:#444;font-size:9px;margin-bottom:7px;font-style:italic">${pos.model}</div>` : ''}
+      \${pos.model ? \`<div style="font-family:'DM Mono',monospace;color:#444;font-size:9px;margin-bottom:7px;font-style:italic">\${pos.model}</div>\` : ''}
       <div style="display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-family:'DM Mono',monospace;font-size:10px;align-items:center">
-        <span style="color:#555">Höhe</span><span style="color:#f0f0f0;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">${pos.altM != null ? pos.altM + ' m' : '—'}</span>
-        <span style="color:#555">Speed</span><span style="color:#f0f0f0;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">${pos.speedKmh != null ? pos.speedKmh + ' km/h' : '—'}</span>
-        <span style="color:#555">Kurs</span><span style="color:#f0f0f0;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">${pos.course != null ? pos.course + '°' : '—'}</span>
-        ${pos.varioMs != null ? `<span style="color:#555">Vario</span><span style="color:${pos.varioMs > 0 ? '#22c55e' : '#38bdf8'};text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">${pos.varioMs > 0 ? '+' : ''}${pos.varioMs} m/s</span>` : ''}
-        <span style="color:#333">vor</span><span style="color:#333;text-align:right">${ageStr}</span>
+        <span style="color:#555">Höhe</span><span style="color:#f0f0f0;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">\${pos.altM != null ? pos.altM + ' m' : '—'}</span>
+        <span style="color:#555">Speed</span><span style="color:#f0f0f0;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">\${pos.speedKmh != null ? pos.speedKmh + ' km/h' : '—'}</span>
+        <span style="color:#555">Kurs</span><span style="color:#f0f0f0;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">\${pos.course != null ? pos.course + '°' : '—'}</span>
+        \${pos.varioMs != null ? \`<span style="color:#555">Vario</span><span style="color:\${pos.varioMs > 0 ? '#22c55e' : '#38bdf8'};text-align:right;font-family:'Bebas Neue',sans-serif;font-size:14px">\${pos.varioMs > 0 ? '+' : ''}\${pos.varioMs} m/s</span>\` : ''}
+        <span style="color:#333">vor</span><span style="color:#333;text-align:right">\${ageStr}</span>
       </div>
     </div>
-  `;
+  \`;
 }
 
 function createGliderIcon(course, color) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
-    <g transform="rotate(${course},20,20)">
-      <ellipse cx="20" cy="20" rx="3" ry="12" fill="${color}" stroke="#000" stroke-width="1.2"/>
-      <ellipse cx="20" cy="20" rx="16" ry="2.5" fill="${color}" stroke="#000" stroke-width="1.2"/>
-      <ellipse cx="20" cy="30" rx="7" ry="1.5" fill="${color}" stroke="#000" stroke-width="1.2"/>
+  const svg = \`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+    <g transform="rotate(\${course},20,20)">
+      <ellipse cx="20" cy="20" rx="3" ry="12" fill="\${color}" stroke="#000" stroke-width="1.2"/>
+      <ellipse cx="20" cy="20" rx="16" ry="2.5" fill="\${color}" stroke="#000" stroke-width="1.2"/>
+      <ellipse cx="20" cy="30" rx="7" ry="1.5" fill="\${color}" stroke="#000" stroke-width="1.2"/>
     </g>
-  </svg>`;
+  </svg>\`;
   return L.divIcon({ html: svg, className: '', iconSize: [40, 40], iconAnchor: [20, 20], popupAnchor: [0, -22] });
 }
 
@@ -1690,42 +1569,42 @@ function renderTrackerList() {
 
     let liveHtml = '';
     if (!hexId) {
-      liveHtml = `<div class="gc-status no-db">Nicht in OGN DB</div>`;
+      liveHtml = \`<div class="gc-status no-db">Nicht in OGN DB</div>\`;
     } else if (!pos) {
-      liveHtml = `<div class="gc-status waiting">Warte auf Signal…</div>`;
+      liveHtml = \`<div class="gc-status waiting">Warte auf Signal…</div>\`;
     } else {
       const vCol = pos.varioMs != null ? (pos.varioMs > 0.3 ? 'up' : pos.varioMs < -0.3 ? 'down' : '') : '';
-      liveHtml = `
+      liveHtml = \`
         <div class="gc-live">
           <div class="gc-live-item">
             <div class="gc-live-lbl">Höhe</div>
-            <div class="gc-live-val">${pos.altM != null ? pos.altM : '—'}</div>
+            <div class="gc-live-val">\${pos.altM != null ? pos.altM : '—'}</div>
           </div>
           <div class="gc-live-item">
             <div class="gc-live-lbl">km/h</div>
-            <div class="gc-live-val">${pos.speedKmh != null ? pos.speedKmh : '—'}</div>
+            <div class="gc-live-val">\${pos.speedKmh != null ? pos.speedKmh : '—'}</div>
           </div>
           <div class="gc-live-item">
             <div class="gc-live-lbl">Vario</div>
-            <div class="gc-live-val ${vCol}">${pos.varioMs != null ? (pos.varioMs > 0 ? '+' : '') + pos.varioMs : '—'}</div>
+            <div class="gc-live-val \${vCol}">\${pos.varioMs != null ? (pos.varioMs > 0 ? '+' : '') + pos.varioMs : '—'}</div>
           </div>
         </div>
-        <div class="gc-age">vor ${age < 60 ? age + 's' : Math.round(age/60) + 'min'}</div>
-        <button class="gc-focus" onclick="focusGlider('${hexId}')">◎ KARTE</button>
-      `;
+        <div class="gc-age">vor \${age < 60 ? age + 's' : Math.round(age/60) + 'min'}</div>
+        <button class="gc-focus" onclick="focusGlider('\${hexId}')">◎ KARTE</button>
+      \`;
     }
 
-    card.innerHTML = `
+    card.innerHTML = \`
       <div class="gc-top">
         <div>
-          <span class="gc-reg" style="color:${color}">${reg}</span>
-          ${info?.cn && info.cn !== reg ? `<span class="gc-cn">${info.cn}</span>` : ''}
+          <span class="gc-reg" style="color:\${color}">\${reg}</span>
+          \${info?.cn && info.cn !== reg ? \`<span class="gc-cn">\${info.cn}</span>\` : ''}
         </div>
-        <button class="gc-remove" onclick="removeGlider('${reg}')" title="Entfernen">✕</button>
+        <button class="gc-remove" onclick="removeGlider('\${reg}')" title="Entfernen">✕</button>
       </div>
-      ${info?.model ? `<div class="gc-model">${info.model}</div>` : ''}
-      ${liveHtml}
-    `;
+      \${info?.model ? \`<div class="gc-model">\${info.model}</div>\` : ''}
+      \${liveHtml}
+    \`;
     list.appendChild(card);
   });
 }
@@ -1755,7 +1634,7 @@ function initTrackerMap() {
 /* ═══════════════════════════════════════════════
    FLIGHT LOGIC (original, unverändert)
 ═══════════════════════════════════════════════ */
-const AC = {
+const AC_DEFS = {
   ASK13: { name: 'ASK 13', circleSpd: 72, glide: 27 },
   ASK21: { name: 'ASK 21B', circleSpd: 82, glide: 34 }
 };
@@ -1802,6 +1681,7 @@ function pad(n) { return String(n).padStart(2, '0'); }
 
 function showToast(msg) {
   const t = document.getElementById('toast');
+  if (!t) return;
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(showToast.tm);
@@ -1855,14 +1735,26 @@ function updateVarioDisplay(v) {
   el.style.color = v > 0.3 ? 'var(--acc)' : v < -0.3 ? 'var(--blue)' : 'var(--text)';
   const pct = Math.min(Math.abs(v) / 5, 1);
   const barH = Math.max(2, pct * outerH);
-  if (v > 0.1) { fill.style.background = 'var(--acc)'; fill.style.height = barH + 'px'; fill.style.top = (center - barH) + 'px'; }
-  else if (v < -0.1) { fill.style.background = 'var(--blue)'; fill.style.height = barH + 'px'; fill.style.top center + 'px'; }
-  else { fill.style.height = '2px'; fill.style.top = (center - 1) + 'px'; fill.style.background = 'var(--border)'; }
+  if (v > 0.1) { 
+    fill.style.background = 'var(--acc)'; 
+    fill.style.height = barH + 'px'; 
+    fill.style.top = (center - barH) + 'px'; 
+  }
+  else if (v < -0.1) { 
+    fill.style.background = 'var(--blue)'; 
+    fill.style.height = barH + 'px'; 
+    fill.style.top = center + 'px'; 
+  }
+  else { 
+    fill.style.height = '2px'; 
+    fill.style.top = (center - 1) + 'px'; 
+    fill.style.background = 'var(--border)'; 
+  }
 }
 
 function updateLabValues() {
   const fix = latestFix || (track && track.length ? track[track.length - 1] : null);
-  const ac = AC[selectedAC] || AC.ASK13;
+  const ac = AC_DEFS[selectedAC] || AC_DEFS.ASK13;
   let gain = 0, maxClimb = null, glide = null;
   if (track && track.length > 1) {
     for (let i = 1; i < track.length; i++) {
@@ -1920,7 +1812,7 @@ function loadHome() {
 }
 
 function updateReachCircle(lat, lon, alt, dynamicGlide) {
-  const ac = AC[selectedAC] || AC.ASK13;
+  const ac = AC_DEFS[selectedAC] || AC_DEFS.ASK13;
   const glide = dynamicGlide || ac.glide;
   if (alt == null || !Number.isFinite(alt)) return;
   const r = Math.max(0, alt * glide);
@@ -1971,7 +1863,7 @@ function syncFullscreenMap() {
   if (fsWind && liveWind) fsWind.textContent = liveWind.textContent || 'WIND --';
   const fsStart = document.getElementById('fs-start-btn');
   if (fsStart) { fsStart.textContent = isRecording ? '■ STOPP' : 'START'; fsStart.classList.toggle('recording', isRecording); }
-  updateReachCircle(fix.lat, fix.lon, fix.alt, fix.gleitzahl);
+  updateReachCircle(fix.lat, fix.lon, fix.alt, latestFix?.gleitzahl);
 }
 
 let gpsStarted = false, gpsPrimed = false;
@@ -1994,8 +1886,8 @@ function startGPS() {
 
 function onGPSErr(e) {
   gpsStarted = false;
-  if (e.code === e.PERMISSION_DENIED) { const errEl = document.getElementById('gps-err'); if (errEl) errEl.classList.add('show'); setStatus('GPS verweigert', 'err'); }
-  else if (e.code === e.TIMEOUT) { setStatus('GPS Timeout', 'search'); primeGPSOnce(); }
+  if (e.code === 1) { const errEl = document.getElementById('gps-err'); if (errEl) errEl.classList.add('show'); setStatus('GPS verweigert', 'err'); }
+  else if (e.code === 3) { setStatus('GPS Timeout', 'search'); primeGPSOnce(); }
   else { setStatus('GPS Fehler: ' + e.message, 'err'); }
 }
 
@@ -2143,7 +2035,6 @@ function toggleRecording() {
     if (ttRec) ttRec.style.display = 'flex';
     clearInterval(timerIv); timerIv = setInterval(updateTimer, 1000); updateTimer();
     showToast('Aufzeichnung gestartet');
-    // OGN background tracking starten wenn reg vorhanden
     if (ownReg && WS_URL) startOwnRegOgnTracking();
   } else {
     isRecording = false; clearInterval(timerIv);
@@ -2180,7 +2071,7 @@ function loadTrack() {
   try {
     const t = localStorage.getItem('glideos_track'), a = localStorage.getItem('glideos_ac'), s = localStorage.getItem('glideos_start'), sm = localStorage.getItem('glideos_story_map');
     if (t) track = JSON.parse(t);
-    if (a && AC[a]) selectedAC = a;
+    if (a && AC_DEFS[a]) selectedAC = a;
     if (s) flightStart = parseInt(s);
     storyMapMode = sm === '1';
     setText('disp-pts', track.length || 0);
@@ -2194,13 +2085,13 @@ function refreshLiveMapFromTrack() {
 }
 
 function selectAC(ac, silent) {
-  if (!AC[ac]) return; selectedAC = ac;
+  if (!AC_DEFS[ac]) return; selectedAC = ac;
   document.getElementById('ac-ask13').classList.toggle('active', ac === 'ASK13');
   document.getElementById('ac-ask21').classList.toggle('active', ac === 'ASK21');
-  setText('tt-ac-label', AC[ac].name);
+  setText('tt-ac-label', AC_DEFS[ac].name);
   const sel = document.getElementById('tt-ac-sel');
   if (sel) sel.value = ac;
-  if (!silent) showToast(AC[ac].name + ' ausgewählt');
+  if (!silent) showToast(AC_DEFS[ac].name + ' ausgewählt');
   saveTrack(true);
 }
 
@@ -2268,80 +2159,46 @@ function analyzeTrack() {
   ttLayers.forEach(l => ttMap.removeLayer(l)); ttLayers = [];
   document.getElementById('tt-no-track').style.display = 'none';
   document.getElementById('tt-results').style.display = 'block';
-  const WINDOW_S = 15, CIRCLE_DEG = 180;
-  const segs = [];
-  let i = 0;
-  while (i < track.length - 1) {
-    let j = i + 1, hdgAcc = 0;
-    while (j < track.length && (track[j].ts - track[i].ts) / 1000 <= WINDOW_S) {
-      if (track[j-1].hdg != null && track[j].hdg != null) hdgAcc += hdgDiff(track[j-1].hdg, track[j].hdg);
-      j++;
-    }
-    const isThermic = hdgAcc >= CIRCLE_DEG;
-    let k = Math.min(j, track.length);
-    while (k < track.length) {
-      let ha = 0, l = k + 1;
-      while (l < track.length && (track[l].ts - track[k].ts) / 1000 <= WINDOW_S) {
-        if (track[l-1].hdg != null && track[l].hdg != null) ha += hdgDiff(track[l-1].hdg, track[l].hdg);
-        l++;
-      }
-      const t2 = ha >= CIRCLE_DEG;
-      if (t2 !== isThermic) break;
-      k = l;
-    }
-    segs.push({ type: isThermic ? 'thermal' : 'glide', points: track.slice(i, k) });
-    i = Math.max(i + 1, k);
+  let dist = 0, maxAlt = 0, climbSecs = 0, totalSecs = (track[track.length-1].ts - track[0].ts)/1000;
+  let climbs = [], curClimb = null;
+  for (let i = 1; i < track.length; i++) {
+    const p1 = track[i-1], p2 = track[i];
+    const d = haversine(p1.lat, p1.lon, p2.lat, p2.lon); dist += d;
+    if (p2.alt > maxAlt) maxAlt = p2.alt;
+    const v = p2.vario;
+    const color = v > 0.4 ? '#ef5350' : v < -0.6 ? '#38bdf8' : '#444';
+    ttLayers.push(L.polyline([[p1.lat, p1.lon], [p2.lat, p2.lon]], { color, weight: 4 }).addTo(ttMap));
+    if (v > 0.3) { climbSecs += (p2.ts - p1.ts)/1000; if (!curClimb) curClimb = { start: p1.ts, startAlt: p1.alt, maxV: v }; else curClimb.maxV = Math.max(curClimb.maxV, v); }
+    else if (curClimb) { curClimb.end = p1.ts; curClimb.endAlt = p1.alt; climbs.push(curClimb); curClimb = null; }
   }
-
-  let dist = 0, maxAlt = 0, duration = 0, climbSum = 0, climbPts = 0, maxClimb = -99;
-  segs.forEach(s => {
-    const pts = s.points;
-    if (pts.length < 2) return;
-    const color = s.type === 'thermal' ? '#ef5350' : '#38bdf8';
-    const weight = s.type === 'thermal' ? 4 : 2;
-    const layer = L.polyline(pts.map(p => [p.lat, p.lon]), { color, weight }).addTo(ttMap);
-    ttLayers.push(layer);
-    for (let m = 1; m < pts.length; m++) {
-      dist += haversine(pts[m-1].lat, pts[m-1].lon, pts[m].lat, pts[m].lon);
-      if (pts[m].alt != null) maxAlt = Math.max(maxAlt, pts[m].alt);
-      if (pts[m].vario != null) {
-        if (pts[m].vario > 0) { climbSum += pts[m].vario; climbPts++; }
-        maxClimb = Math.max(maxClimb, pts[m].vario);
-      }
-    }
-  });
-  if (track.length > 1) duration = (track[track.length-1].ts - track[0].ts) / 1000;
-  const thTime = segs.filter(s => s.type === 'thermal').reduce((a,b) => a + (b.points[b.points.length-1].ts - b.points[0].ts)/1000, 0);
-
-  setText('st-dur', pad(Math.floor(duration/3600)) + ':' + pad(Math.floor((duration%3600)/60)));
+  const avgClimb = climbs.length ? climbs.reduce((a,c) => a + (c.endAlt - c.startAlt), 0) / climbSecs : 0;
+  const maxClimb = climbs.length ? Math.max(...climbs.map(c => c.maxV)) : 0;
+  setText('st-dur', Math.round(totalSecs/60) + ' min');
   setText('st-dist', (dist/1000).toFixed(1) + ' km');
   setText('st-alt', Math.round(maxAlt) + ' m');
-  setText('st-thpct', Math.round((thTime/duration)*100) + '%');
-  setText('st-avgc', climbPts > 0 ? (climbSum/climbPts).toFixed(1) + ' m/s' : '--');
-  setText('st-maxc', maxClimb > -90 ? maxClimb.toFixed(1) + ' m/s' : '--');
-  if (ttLayers.length) ttMap.fitBounds(L.featureGroup(ttLayers).getBounds(), { padding: [20, 20] });
+  setText('st-thpct', Math.round(climbSecs/totalSecs*100) + '%');
+  setText('st-avgc', avgClimb.toFixed(1) + ' m/s');
+  setText('st-maxc', maxClimb.toFixed(1) + ' m/s');
+  const bounds = L.polyline(track.map(p => [p.lat, p.lon])).getBounds();
+  ttMap.fitBounds(bounds, { padding: [20, 20] });
 }
 
 function refreshStory() {
   loadTrack();
-  const dateEl = document.getElementById('s-date');
-  if (dateEl && track.length) dateEl.textContent = new Date(track[0].ts).toLocaleDateString('de-DE');
-  setText('s-ac', AC[selectedAC].name);
-  let dist = 0, altGain = 0, glideSum = 0, glidePts = 0;
+  const date = track.length ? new Date(track[0].ts).toLocaleDateString('de-DE') : '--.--.----';
+  setText('s-date', date);
+  setText('s-ac', AC_DEFS[selectedAC].name);
+  let dist = 0, altGain = 0;
   for (let i = 1; i < track.length; i++) {
-    const d = haversine(track[i-1].lat, track[i-1].lon, track[i].lat, track[i].lon);
-    dist += d;
-    if (track[i].alt != null && track[i-1].alt != null) {
-      const da = track[i].alt - track[i-1].alt;
-      if (da > 0) altGain += da;
-      else if (da < -0.5 && d > 5) { glideSum += (d / Math.abs(da)); glidePts++; }
-    }
+    dist += haversine(track[i-1].lat, track[i-1].lon, track[i].lat, track[i].lon);
+    if (track[i].alt > track[i-1].alt) altGain += (track[i].alt - track[i-1].alt);
   }
-  const dur = track.length > 1 ? (track[track.length-1].ts - track[0].ts)/1000 : 0;
   setText('s-dist', (dist/1000).toFixed(1));
-  setText('s-dur', pad(Math.floor(dur/3600)) + ':' + pad(Math.floor((dur%3600)/60)) + ':' + pad(Math.floor(dur%60)));
   setText('s-altgain', Math.round(altGain));
-  setText('s-glide', glidePts > 0 ? '1:' + Math.round(glideSum/glidePts) : '1:--');
+  const dur = track.length ? (track[track.length-1].ts - track[0].ts) : 0;
+  const s = Math.floor(dur/1000);
+  setText('s-dur', pad(Math.floor(s/3600)) + ':' + pad(Math.floor((s%3600)/60)) + ':' + pad(s%60));
+  setText('s-glide', '1:' + (altGain > 100 ? Math.round(dist/altGain) : '--'));
   drawStoryTrack();
 }
 
@@ -2349,115 +2206,43 @@ function drawStoryTrack() {
   const canvas = document.getElementById('s-track-canvas');
   if (!canvas || !track.length) return;
   const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const w = canvas.offsetWidth * dpr, h = canvas.offsetHeight * dpr;
-  canvas.width = w; canvas.height = h;
-  ctx.clearRect(0,0,w,h);
+  const W = canvas.width = canvas.offsetWidth * 2, H = canvas.height = canvas.offsetHeight * 2;
+  ctx.clearRect(0, 0, W, H);
   const lats = track.map(p => p.lat), lons = track.map(p => p.lon);
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
-  const dLat = maxLat - minLat, dLon = maxLon - minLon;
-  const scale = Math.min(w / (dLon || 1), h / (dLat || 1)) * 0.85;
-  const offX = (w - dLon * scale) / 2, offY = (h - dLat * scale) / 2;
-  ctx.beginPath(); ctx.lineWidth = 3 * dpr; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = '#22c55e';
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats), minLon = Math.min(...lons), maxLon = Math.max(...lons);
+  const dLat = maxLat - minLat, dLon = maxLon - minLon, aspect = dLon / dLat || 1;
+  const pad = 40;
+  const scale = Math.min((W-2*pad)/dLon, (H-2*pad)/dLat);
+  const ox = (W - dLon*scale)/2, oy = (H - dLat*scale)/2;
+  ctx.beginPath(); ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 6; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   track.forEach((p, i) => {
-    const x = offX + (p.lon - minLon) * scale;
-    const y = h - (offY + (p.lat - minLat) * scale);
+    const x = ox + (p.lon - minLon) * scale, y = H - (oy + (p.lat - minLat) * scale);
     if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
   });
   ctx.stroke();
 }
 
-async function exportStory() {
-  const frame = document.getElementById('story-frame');
-  const btn = event.target; btn.textContent = 'LÄDT…';
-  try {
-    const canvas = await html2canvas(frame, { backgroundColor: '#0d0d0d', scale: 2 });
-    const link = document.createElement('a');
-    link.download = 'glideOS-Story-' + Date.now() + '.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  } catch(e) { showToast('Export Fehler'); }
-  btn.textContent = '⬇ PNG';
-}
-
-async function exportStoryTransparent() {
-  const frame = document.getElementById('story-frame');
-  const oldBg = frame.style.background, oldBorder = frame.style.borderColor;
-  frame.style.background = 'transparent'; frame.style.borderColor = 'transparent';
-  try {
-    const canvas = await html2canvas(frame, { backgroundColor: null, scale: 2 });
-    const link = document.createElement('a');
-    link.download = 'glideOS-Overly-' + Date.now() + '.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  } catch(e) {}
-  frame.style.background = oldBg; frame.style.borderColor = oldBorder;
-}
-
-function exportTelemetryOverlay() {
-  const stage = document.createElement('div'); stage.className = 'export-stage';
-  stage.innerHTML = `
-    <div class="telemetry-export" id="tele-exp">
-      <div class="telemetry-export-map" id="tele-map"></div>
-      <div class="telemetry-export-title">glideOS TELEMETRY</div>
-      <div class="telemetry-export-hud">
-        <div class="telemetry-export-box"><div class="telemetry-export-label">Speed</div><div class="telemetry-export-value acc">${Math.round(displayGs)} KM/H</div></div>
-        <div class="telemetry-export-box"><div class="telemetry-export-label">Alt</div><div class="telemetry-export-value">${document.getElementById('disp-alt').textContent} M</div></div>
-        <div class="telemetry-export-box"><div class="telemetry-export-label">Vario</div><div class="telemetry-export-value">${document.getElementById('disp-vario').textContent}</div></div>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(stage);
-  const mEl = stage.querySelector('#tele-map');
-  const m = L.map(mEl, { zoomControl: false, attributionControl: false });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { crossOrigin: true }).addTo(m);
-  if (track.length > 0) {
-    const line = L.polyline(track.map(p => [p.lat, p.lon]), { color: '#22c55e', weight: 8, opacity: 0.9 }).addTo(m);
-    m.fitBounds(line.getBounds(), { padding: [50, 50] });
-  }
-  setTimeout(async () => {
-    const res = await html2canvas(stage.querySelector('#tele-exp'), { scale: 1, useCORS: true, allowTaint: true });
-    const link = document.createElement('a'); link.download = 'glideOS-Telemetry-' + Date.now() + '.png'; link.href = res.toDataURL(); link.click();
-    document.body.removeChild(stage);
-  }, 1000);
-}
-
+function toggleStoryMap() { storyMapMode = !storyMapMode; document.getElementById('story-map-btn').textContent = storyMapMode ? 'MAP AN' : 'MAP AUS'; saveTrack(); }
+function exportStory() { showToast('Exportiere PNG…'); html2canvas(document.getElementById('story-frame')).then(c => { const a = document.createElement('a'); a.href = c.toDataURL(); a.download = 'glideOS-story.png'; a.click(); }); }
+function exportStoryTransparent() { showToast('Exportiere PNG…'); const f = document.getElementById('story-frame'); const bg = f.style.background; f.style.background = 'transparent'; f.style.borderColor = 'transparent'; html2canvas(f, { backgroundColor: null }).then(c => { f.style.background = bg; f.style.borderColor = ''; const a = document.createElement('a'); a.href = c.toDataURL(); a.download = 'glideOS-story-trans.png'; a.click(); }); }
 function downloadIGC() {
-  if (!track.length) { showToast('Kein Track zum Exportieren'); return; }
-  let igc = 'AXXX glideOS v2\\nHFDTE' + new Date(track[0].ts).toISOString().slice(2,10).replace(/-/g,'') + '\\n';
-  track.forEach((p, i) => {
-    const t = new Date(p.ts).toISOString().slice(11,19).replace(/:/g,'');
-    const lat = Math.abs(p.lat).toFixed(5).replace('.','').padStart(7,'0') + (p.lat >= 0 ? 'N' : 'S');
-    const lon = Math.abs(p.lon).toFixed(5).replace('.','').padStart(8,'0') + (p.lon >= 0 ? 'E' : 'W');
-    igc += `B${t}${lat}${lon}A${Math.round(p.alt || 0).toString().padStart(5,'0')}${Math.round(p.alt || 0).toString().padStart(5,'0')}\\n`;
-  });
+  if (!track.length) return;
+  let igc = "HFDTE" + new Date(track[0].ts).toISOString().slice(2,10).replace(/-/g,'') + "\\nHFPLTPILOTIN: glideOS USER\\nHFGTYGLIDER: " + AC_DEFS[selectedAC].name + "\\n";
+  track.forEach(p => { const d = new Date(p.ts); igc += "B" + d.toISOString().slice(11,19).replace(/:/g,'') + "0000000N0000000E" + (p.alt != null ? "A" + pad(Math.round(p.alt), 5) : "V00000") + "\\n"; });
   const blob = new Blob([igc], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a'); link.href = url; link.download = 'flight-' + Date.now() + '.igc'; link.click();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'flight.igc'; a.click();
 }
+
+function exportTelemetryOverlay() { showToast('Telemetry Export nicht implementiert'); }
 
 /* ═══════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════ */
-window.onload = () => {
-  loadOwnReg(); loadTrackerRegs(); loadTrack(); loadHome();
-  if (track.length > 0) {
-    const last = track[track.length-1];
-    if (Date.now() - last.ts < 10 * 60 * 1000) {
-      if (confirm('Letzten Flug fortsetzen?')) {
-        isRecording = true; timerIv = setInterval(updateTimer, 1000);
-        const sb = document.getElementById('start-btn'); if (sb) { sb.textContent = '■ STOPP'; sb.classList.add('recording'); }
-      }
-    }
-  }
+window.addEventListener('load', () => {
+  loadTrack(); loadHome();
+  if (track.length) { refreshLiveMapFromTrack(); selectAC(selectedAC, true); updateTimer(); }
   checkMotionPermission();
-  renderTrackerList();
-  // Service Worker for Offline
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  }
-};
+});
 </script>
 </body>
 </html>
