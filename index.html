@@ -1242,7 +1242,7 @@ function goHome() {
       if (d.x < 0) d.x = W; if (d.x > W) d.x = 0;
       if (d.y < 0) d.y = H; if (d.y > H) d.y = 0;
       ctx.beginPath(); ctx.arc(d.x, d.y, d.r * devicePixelRatio, 0, Math.PI * 2);
-      ctx.fillStyle = \`rgba(34,197,94,\${d.alpha})\`; ctx.fill();
+      ctx.fillStyle = `rgba(34,197,94,${d.alpha})`; ctx.fill();
     });
     for (let i = 0; i < dots.length; i++) {
       for (let j = i + 1; j < dots.length; j++) {
@@ -1250,7 +1250,7 @@ function goHome() {
         const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist < W * 0.14) {
           ctx.beginPath(); ctx.moveTo(dots[i].x, dots[i].y); ctx.lineTo(dots[j].x, dots[j].y);
-          ctx.strokeStyle = \`rgba(34,197,94,\${0.06 * (1 - dist / (W * 0.14))})\`; ctx.lineWidth = devicePixelRatio * 0.5; ctx.stroke();
+          ctx.strokeStyle = `rgba(34,197,94,${0.06 * (1 - dist / (W * 0.14))})`; ctx.lineWidth = devicePixelRatio * 0.5; ctx.stroke();
         }
       }
     }
@@ -2159,136 +2159,169 @@ function analyzeTrack() {
   ttLayers.forEach(l => ttMap.removeLayer(l)); ttLayers = [];
   document.getElementById('tt-no-track').style.display = 'none';
   document.getElementById('tt-results').style.display = 'block';
-  let dist = 0, maxAlt = 0, climbSecs = 0, totalSecs = (track[track.length-1].ts - track[0].ts)/1000;
-  let climbs = [], curClimb = null;
-  for (let i = 1; i < track.length; i++) {
-    const p1 = track[i-1], p2 = track[i];
-    const d = haversine(p1.lat, p1.lon, p2.lat, p2.lon); dist += d;
-    if (p2.alt > maxAlt) maxAlt = p2.alt;
-    if (p2.vario > 0.3) {
-      climbSecs += (p2.ts - p1.ts) / 1000;
-      if (!curClimb) { curClimb = { start: p1.ts, alt: p1.alt, points: [p1] }; climbs.push(curClimb); }
-      curClimb.points.push(p2);
-    } else { curClimb = null; }
-    
-    const color = p2.vario > 0.3 ? '#ef5350' : p2.vario < -0.3 ? '#38bdf8' : '#444';
-    const line = L.polyline([[p1.lat, p1.lon], [p2.lat, p2.lon]], { color, weight: 3, opacity: 0.8 }).addTo(ttMap);
-    ttLayers.push(line);
+  const WINDOW_S = 15, CIRCLE_DEG = 180;
+  const segs = [];
+  let i = 0;
+  while (i < track.length - 1) {
+    let j = i + 1, hdgAcc = 0;
+    while (j < track.length && (track[j].ts - track[i].ts) / 1000 <= WINDOW_S) {
+      if (track[j-1].hdg != null && track[j].hdg != null) hdgAcc += hdgDiff(track[j-1].hdg, track[j].hdg);
+      j++;
+    }
+    const isThermic = hdgAcc >= CIRCLE_DEG;
+    let k = Math.min(j, track.length);
+    while (k < track.length) {
+      let ha = 0, l = k + 1;
+      while (l < track.length && (track[l].ts - track[k].ts) / 1000 <= WINDOW_S) {
+        if (track[l-1].hdg != null && track[l].hdg != null) ha += hdgDiff(track[l-1].hdg, track[l].hdg);
+        l++;
+      }
+      if ((ha >= CIRCLE_DEG) !== isThermic) break;
+      k = l;
+    }
+    segs.push({ start: i, end: k - 1, isThermic });
+    i = k - 1;
   }
-  
-  if (track.length > 0) ttMap.fitBounds(L.polyline(track.map(p => [p.lat, p.lon])).getBounds());
-  
-  const avgClimb = climbs.length ? climbs.reduce((s, c) => s + (c.points[c.points.length-1].alt - c.points[0].alt), 0) / climbSecs : 0;
-  let maxC = 0; track.forEach(p => { if (p.vario > maxC) maxC = p.vario; });
-
-  document.getElementById('st-dur').textContent = pad(Math.floor(totalSecs / 3600)) + ':' + pad(Math.floor((totalSecs % 3600) / 60)) + ':' + pad(Math.floor(totalSecs % 60));
-  document.getElementById('st-dist').textContent = (dist / 1000).toFixed(1) + ' km';
-  document.getElementById('st-alt').textContent = Math.round(maxAlt) + ' m';
-  document.getElementById('st-thpct').textContent = Math.round((climbSecs / totalSecs) * 100) + '%';
-  document.getElementById('st-avgc').textContent = avgClimb.toFixed(1) + ' m/s';
-  document.getElementById('st-maxc').textContent = maxC.toFixed(1) + ' m/s';
+  let dist = 0, maxAlt = 0, climbSecs = 0, climbGain = 0;
+  segs.forEach(s => {
+    const pts = track.slice(s.start, s.end + 1);
+    if (pts.length < 2) return;
+    const col = s.isThermic ? '#ef5350' : '#38bdf8';
+    const l = L.polyline(pts.map(p => [p.lat, p.lon]), { color: col, weight: 4, opacity: 0.85 }).addTo(ttMap);
+    ttLayers.push(l);
+    if (s.isThermic) {
+      climbSecs += (pts[pts.length - 1].ts - pts[0].ts) / 1000;
+      const g = (pts[pts.length - 1].alt || 0) - (pts[0].alt || 0);
+      if (g > 0) climbGain += g;
+    }
+  });
+  for (let i = 1; i < track.length; i++) {
+    dist += haversine(track[i-1].lat, track[i-1].lon, track[i].lat, track[i].lon);
+    if (track[i].alt > maxAlt) maxAlt = track[i].alt;
+  }
+  const totalSecs = (track[track.length - 1].ts - track[0].ts) / 1000;
+  setText('st-dur', Math.round(totalSecs / 60) + 'm');
+  setText('st-dist', (dist / 1000).toFixed(1) + 'km');
+  setText('st-alt', Math.round(maxAlt) + 'm');
+  setText('st-thpct', Math.round((climbSecs / totalSecs) * 100) + '%');
+  setText('st-avgc', climbSecs > 0 ? (climbGain / climbSecs).toFixed(1) + 'm/s' : '0.0m/s');
+  const vs = track.map(p => p.vario).filter(v => v != null);
+  setText('st-maxc', vs.length ? Math.max(...vs).toFixed(1) + 'm/s' : '0.0m/s');
+  const bounds = L.latLngBounds(track.map(p => [p.lat, p.lon]));
+  ttMap.fitBounds(bounds, { padding: [30, 30] });
 }
 
-function refreshStory() {
-  const ac = AC_DEFS[selectedAC] || AC_DEFS.ASK13;
-  document.getElementById('s-ac').textContent = ac.name;
-  document.getElementById('s-date').textContent = new Date().toLocaleDateString('de-DE');
-  
+function toggleStoryMap() {
+  storyMapMode = !storyMapMode;
+  document.getElementById('story-map-btn').textContent = storyMapMode ? 'MAP AN' : 'MAP AUS';
+  refreshStory();
+}
+
+async function refreshStory() {
+  loadTrack();
+  if (!track || track.length < 5) return;
+  const last = track[track.length - 1];
+  setText('s-date', new Date(last.ts).toLocaleDateString('de-DE'));
+  setText('s-ac', AC_DEFS[selectedAC].name);
   let dist = 0, gain = 0;
   for (let i = 1; i < track.length; i++) {
     dist += haversine(track[i-1].lat, track[i-1].lon, track[i].lat, track[i].lon);
-    const da = track[i].alt - track[i-1].alt;
-    if (da > 0) gain += da;
+    const d = (track[i].alt || 0) - (track[i-1].alt || 0); if (d > 0) gain += d;
   }
-  
-  const durS = track.length > 0 ? (track[track.length-1].ts - track[0].ts) / 1000 : 0;
-  const glide = dist > 0 && gain < 0 ? Math.round(dist / Math.abs(gain)) : '--';
+  const durS = (last.ts - track[0].ts) / 1000;
+  setText('s-dist', (dist / 1000).toFixed(1));
+  setText('s-dur', pad(Math.floor(durS / 3600)) + ':' + pad(Math.floor((durS % 3600) / 60)) + ':' + pad(Math.floor(durS % 60)));
+  setText('s-altgain', Math.round(gain));
+  const glide = dist / Math.max(1, (track[0].alt || 0) - (last.alt || 0));
+  setText('s-glide', '1:' + (glide > 0 && glide < 100 ? Math.round(glide) : '--'));
 
-  document.getElementById('s-dist').textContent = (dist / 1000).toFixed(1);
-  document.getElementById('s-dur').textContent = pad(Math.floor(durS / 3600)) + ':' + pad(Math.floor((durS % 3600) / 60)) + ':' + pad(Math.floor(durS % 60));
-  document.getElementById('s-glide').textContent = '1:' + glide;
-  document.getElementById('s-altgain').textContent = Math.round(gain);
-
-  drawStoryTrack();
-}
-
-function drawStoryTrack() {
   const canvas = document.getElementById('s-track-canvas');
-  if (!canvas || track.length < 2) return;
   const ctx = canvas.getContext('2d');
-  const w = canvas.width = canvas.offsetWidth * 2;
-  const h = canvas.height = canvas.offsetHeight * 2;
-  ctx.clearRect(0, 0, w, h);
-  
-  const lats = track.map(p => p.lat), lons = track.map(p => p.lon);
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
-  const dLat = maxLat - minLat, dLon = maxLon - minLon;
-  const scale = Math.min((w - 40) / dLon, (h - 40) / dLat);
-  
-  ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-  ctx.beginPath();
-  track.forEach((p, i) => {
-    const x = 20 + (p.lon - minLon) * scale;
-    const y = h - (20 + (p.lat - minLat) * scale);
-    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-  });
-  ctx.stroke();
+  const W = canvas.width = canvas.offsetWidth * 2, H = canvas.height = canvas.offsetHeight * 2;
+  ctx.clearRect(0, 0, W, H);
+  if (storyMapMode) {
+    const bounds = L.latLngBounds(track.map(p => [p.lat, p.lon]));
+    const mapUrl = \`https://static-maps.yandex.ru/1.x/?lang=en_US&ll=\${bounds.getCenter().lng},\${bounds.getCenter().lat}&z=12&l=map&size=450,450&theme=dark\`;
+    const img = new Image(); img.crossOrigin = 'anonymous'; img.src = mapUrl;
+    img.onload = () => { ctx.globalAlpha = 0.4; ctx.drawImage(img, 0, 0, W, H); ctx.globalAlpha = 1.0; drawPath(); };
+  } else { drawPath(); }
+
+  function drawPath() {
+    const lats = track.map(p => p.lat), lons = track.map(p => p.lon);
+    const minLa = Math.min(...lats), maxLa = Math.max(...lats), minLo = Math.min(...lons), maxLo = Math.max(...lons);
+    const scale = Math.min((W - 40) / (maxLo - minLo), (H - 40) / (maxLa - minLa));
+    const offX = (W - (maxLo - minLo) * scale) / 2, offY = (H - (maxLa - minLa) * scale) / 2;
+    ctx.beginPath(); ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 6; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    track.forEach((p, i) => {
+      const x = offX + (p.lon - minLo) * scale, y = H - (offY + (p.lat - minLa) * scale);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
 }
 
 function exportStory() {
   const frame = document.getElementById('story-frame');
-  html2canvas(frame, { backgroundColor: '#000', scale: 2 }).then(canvas => {
-    const link = document.createElement('a');
-    link.download = 'glideOS-Story.png';
-    link.href = canvas.toDataURL();
-    link.click();
+  html2canvas(frame, { backgroundColor: '#000', scale: 3 }).then(cvs => {
+    const link = document.createElement('a'); link.download = 'glideOS-story.png'; link.href = cvs.toDataURL('image/png'); link.click();
+  });
+}
+
+function exportStoryTransparent() {
+  const frame = document.getElementById('story-frame');
+  html2canvas(frame, { backgroundColor: null, scale: 3 }).then(cvs => {
+    const link = document.createElement('a'); link.download = 'glideOS-transparent.png'; link.href = cvs.toDataURL('image/png'); link.click();
+  });
+}
+
+function exportTelemetryOverlay() {
+  const stage = document.createElement('div'); stage.className = 'telemetry-export';
+  const last = track[track.length - 1] || {};
+  let dist = 0; for (let i = 1; i < track.length; i++) dist += haversine(track[i-1].lat, track[i-1].lon, track[i].lat, track[i].lon);
+  stage.innerHTML = \`
+    <div class="telemetry-export-title">glideOS TELEMETRY</div>
+    <div class="telemetry-export-hud">
+      <div class="telemetry-export-box"><div class="telemetry-export-label">Speed</div><div class="telemetry-export-value acc">\${Math.round(last.gs || 0)} KMH</div></div>
+      <div class="telemetry-export-box"><div class="telemetry-export-label">Altitude</div><div class="telemetry-export-value">\${Math.round(last.alt || 0)} M</div></div>
+      <div class="telemetry-export-box"><div class="telemetry-export-label">Distance</div><div class="telemetry-export-value">\${(dist / 1000).toFixed(1)} KM</div></div>
+    </div>
+  \`;
+  document.body.appendChild(stage);
+  html2canvas(stage, { backgroundColor: null, scale: 1 }).then(cvs => {
+    const link = document.createElement('a'); link.download = 'glideOS-telemetry.png'; link.href = cvs.toDataURL('image/png'); link.click();
+    document.body.removeChild(stage);
   });
 }
 
 function downloadIGC() {
-  if (track.length < 2) { showToast('Kein Track zum Exportieren'); return; }
+  if (!track || track.length < 2) { showToast('Kein Track vorhanden'); return; }
   const date = new Date(track[0].ts);
-  const dateStr = date.toISOString().slice(2, 10).replace(/-/g, '');
-  let igc = 'HFDTE' + dateStr + '\r\n';
-  igc += 'HFPLTPILOTINCHARGE: glideOS User\r\n';
-  igc += 'HFGTYGLIDERTYPE: ' + selectedAC + '\r\n';
-  
+  const dateStr = pad(date.getDate()) + pad(date.getMonth() + 1) + String(date.getFullYear()).slice(2);
+  let igc = \`HFDTE\${dateStr}\\nHFPLTPILOTIN: glideOS USER\\nHFGTYGLIDERTYPE: \${AC_DEFS[selectedAC].name}\\n\`;
   track.forEach(p => {
-    const t = new Date(p.ts).toISOString().slice(11, 19).replace(/:/g, '');
-    const lat = Math.abs(p.lat).toFixed(5).replace('.', '') + (p.lat >= 0 ? 'N' : 'S');
-    const lon = Math.abs(p.lon).toFixed(5).replace('.', '') + (p.lon >= 0 ? 'E' : 'W');
-    igc += 'B' + t + lat.padStart(7, '0') + lon.padStart(8, '0') + 'A' + Math.round(p.alt || 0).toString().padStart(5, '0') + Math.round(p.alt || 0).toString().padStart(5, '0') + '\r\n';
+    const t = new Date(p.ts);
+    const time = pad(t.getUTCHours()) + pad(t.getUTCMinutes()) + pad(t.getUTCSeconds());
+    const lat = pad(Math.floor(p.lat)) + pad(Math.round((p.lat % 1) * 60 * 1000)) + 'N';
+    const lon = pad(Math.floor(p.lon), 3) + pad(Math.round((p.lon % 1) * 60 * 1000)) + 'E';
+    igc += \`B\${time}\${lat}\${lon}A\${pad(Math.round(p.alt || 0), 5)}\${pad(Math.round(p.alt || 0), 5)}\\n\`;
   });
-  
   const blob = new Blob([igc], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'flight-' + dateStr + '.igc';
-  a.click();
+  const link = document.createElement('a'); link.download = \`glideOS-\${dateStr}.igc\`; link.href = url; link.click();
 }
 
-function init() {
-  loadTrack();
-  loadHome();
-  checkMotionPermission();
-  const savedAC = localStorage.getItem('glideos_ac');
-  if (savedAC) selectAC(savedAC, true);
+window.onload = () => {
+  loadTrack(); loadHome(); loadOwnReg();
+  loadTrackerRegs();
+  selectAC(selectedAC, true);
   if (track.length > 0) {
+    setText('disp-pts', track.length);
     const last = track[track.length - 1];
-    setTimeout(() => {
-      initLiveMap();
-      if (liveMapReady) {
-        track.forEach(p => updateLiveMap(p.lat, p.lon, p.alt, p.gs, p.hdg));
-        liveMap.setView([last.lat, last.lon], 13);
-      }
-    }, 500);
+    setText('disp-gs', Math.round(last.gs || 0));
+    setText('disp-alt', last.alt != null ? Math.round(last.alt) : '---');
   }
-}
-
-window.addEventListener('load', init);
-
+  checkMotionPermission();
+};
 </script>
 </body>
 </html>
