@@ -240,6 +240,7 @@ function saveTrackerRegs() {
   try { localStorage.setItem(TRACKER_KEY, JSON.stringify(trackerRegs)); } catch(e) {}
 }
 
+let wsRetryCount = 0;
 function connectWS() {
   if (ws) { ws.onclose = null; ws.close(); ws = null; }
   clearTimeout(wsReconnectTimer);
@@ -249,6 +250,7 @@ function connectWS() {
   setWsBadge('connecting', 'VERBINDE');
   ws = new WebSocket(WS_URL);
   ws.onopen = () => {
+    wsRetryCount = 0;
     wsStatus = 'connected'; setWsBadge('live', 'LIVE');
     if (trackerRegs.length > 0) ws.send(JSON.stringify({ type: 'subscribe', registrations: trackerRegs }));
   };
@@ -259,7 +261,13 @@ function connectWS() {
       else if (msg.type === 'subscribed') { trackerResolved = msg.resolved || []; renderTrackerList(); }
     } catch(err) {}
   };
-  ws.onclose = () => { wsStatus = 'disconnected'; setWsBadge('', 'OFFLINE'); wsReconnectTimer = setTimeout(connectWS, 4000); };
+  ws.onclose = () => {
+    wsStatus = 'disconnected'; setWsBadge('', 'OFFLINE');
+    const delay = Math.min(3000 * Math.pow(1.5, wsRetryCount), 30000);
+    wsRetryCount++;
+    if (wsRetryCount <= 3) showToast('Server startet… Retry in ' + Math.round(delay/1000) + 's');
+    wsReconnectTimer = setTimeout(connectWS, delay);
+  };
   ws.onerror = () => { wsStatus = 'error'; setWsBadge('err', 'FEHLER'); };
 }
 
