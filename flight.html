@@ -1243,10 +1243,18 @@ body { overflow-x: hidden !important; overflow-y: auto !important; }
    CONFIG
 ═══════════════════════════════════════════════ */
 let WS_URL = '';
-fetch('/api/config').then(r => r.json()).then(d => {
+fetch('/api/config').then(r => {
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}).then(d => {
   WS_URL = d.wsUrl || '';
+  if (!WS_URL) console.warn('[OGN] WS_URL leer — kein Backend konfiguriert');
   if (ownReg) startOgnTracking();
-}).catch(() => { WS_URL = ''; });
+}).catch(err => {
+  WS_URL = '';
+  console.error('[OGN] Config-Fehler:', err);
+  showToast('Backend-Config nicht erreichbar');
+});
 
 function goHome() { location.href = 'index.html'; }
 
@@ -1383,17 +1391,27 @@ function clearOwnReg() {
   showToast('Reg entfernt — GPS-Modus');
 }
 
+let ognRetryCount = 0;
 function startOgnTracking() {
   if (!WS_URL || !ownReg) {
-    if (!WS_URL) showToast('OGN-Server nicht konfiguriert — GPS Fallback');
+    if (!WS_URL) { showToast('OGN-Server nicht konfiguriert — GPS Fallback'); paintBadge('GPS (kein OGN-Server)', 'gps'); }
     return;
   }
   clearTimeout(ognReconnectTimer);
   if (ognWs) { ognWs.onclose = null; try { ognWs.close(); } catch(e) {} }
   ognLanded = false; ognLowSpeedStart = null;
   paintBadge('OGN verbinde…', 'ogn');
-  ognWs = new WebSocket(WS_URL);
+  try {
+    ognWs = new WebSocket(WS_URL);
+  } catch(e) {
+    console.error('[OGN] WebSocket-Fehler:', e);
+    paintBadge('OGN Fehler', 'gps');
+    showToast('WebSocket-Verbindung fehlgeschlagen');
+    scheduleOgnRetry();
+    return;
+  }
   ognWs.onopen = () => {
+    ognRetryCount = 0;
     ognWs.send(JSON.stringify({ type: 'subscribe', registrations: [ownReg] }));
     paintBadge('OGN · ' + ownReg + ' · warte', 'ogn');
   };
@@ -1404,12 +1422,27 @@ function startOgnTracking() {
       else if (msg.type === 'position' && msg.data) onOgnPosition(msg.data);
     } catch(err) {}
   };
-  ognWs.onclose = () => { if (ownReg && !ognLanded) ognReconnectTimer = setTimeout(startOgnTracking, 5000); };
-  ognWs.onerror = () => {};
+  ognWs.onclose = () => {
+    if (!ownReg || ognLanded) return;
+    paintBadge('OGN offline · Retry…', 'gps');
+    scheduleOgnRetry();
+  };
+  ognWs.onerror = (e) => {
+    console.error('[OGN] WS error', e);
+    paintBadge('OGN Fehler · Retry…', 'gps');
+  };
+}
+function scheduleOgnRetry() {
+  clearTimeout(ognReconnectTimer);
+  const delay = Math.min(3000 * Math.pow(1.5, ognRetryCount), 30000);
+  ognRetryCount++;
+  if (ognRetryCount <= 3) showToast('OGN-Server startet… Retry in ' + Math.round(delay/1000) + 's');
+  ognReconnectTimer = setTimeout(startOgnTracking, delay);
 }
 
 function stopOgnTracking() {
   clearTimeout(ognReconnectTimer);
+  ognRetryCount = 0;
   if (ognWs) { ognWs.onclose = null; try { ognWs.close(); } catch(e) {} ognWs = null; }
 }
 
